@@ -5,7 +5,11 @@ from fastapi.responses import HTMLResponse
 from starlette.requests import Request
 from dependencies import engine, Base
 import models
-app = FastAPI()
+import logging
+# logging.basicConfig()
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+
+app = FastAPI(debug=True)
 
 Base.metadata.create_all(bind=engine)
 
