@@ -19,15 +19,15 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
-    full_name = Column(String)
+    full_name = Column(String, nullable=False)
     phone_number = Column(String, unique=True, index=True)
-    unit = Column(Integer)
-    level = Column(String)
-    role = Column(Enum(Role), nullable=False, default=Role.EMPLOYEE)  # تغییر نقش به Enum
-    hashed_password = Column(String)
+    unit = Column(String, nullable=False)
+    level = Column(String, nullable=False)
+    role = Column(Enum(Role), nullable=False, default="employee")
+    hashed_password = Column(String, nullable=False)
 
     leave_requests = relationship("LeaveRequest", back_populates="user")
-
+    
 
 class LeaveRequest(Base):
     __tablename__ = 'leave_requests'

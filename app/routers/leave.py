@@ -1,12 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import date
 from dependencies import get_db
 from models import LeaveRequest, User
 from .auth import get_current_user
+import jdatetime
+
 
 router = APIRouter()
+
+templates = Jinja2Templates(directory="templates")
 
 # مدل پایتون جهت ثبت درخواست مرخصی
 class LeaveRequestCreate(BaseModel):
@@ -14,43 +20,133 @@ class LeaveRequestCreate(BaseModel):
     end_date: date
     reason: str = None
 
-@router.post("/leave", tags=["leave"])
+# leave request
+@router.get("/create-leave-request", response_class=HTMLResponse)
+async def create_leave_request_page(request: Request):
+    """
+    صفحه ایجاد درخواست مرخصی
+    """
+    return templates.TemplateResponse("create_leave_request.html", {"request": request})
+
+# @router.post("/leave", tags=["leave"])
+# def create_leave_request(
+#     leave_data: LeaveRequestCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     try:
+#         # بررسی وجود درخواست تایید شده در سطح کاربر
+#         existing_request = db.query(LeaveRequest).filter(
+#             LeaveRequest.level == current_user.level,
+#             LeaveRequest.status == "approved"
+#         ).first()
+#         print(f"Existing Request: {existing_request}")  # چاپ درخواست موجود
+
+#         if existing_request:
+#             status = "waiting"
+#         else:
+#             status = "pending"
+
+#         new_leave = LeaveRequest(
+#             user_id=current_user.id,
+#             start_date=leave_data.start_date,
+#             end_date=leave_data.end_date,
+#             reason=leave_data.reason,
+#             status=status,
+#             level=current_user.level
+#         )
+#         print(f"New Leave Request: {new_leave}")  # چاپ درخواست جدید
+
+#         db.add(new_leave)
+#         db.commit()
+#         db.refresh(new_leave)
+#         return new_leave
+#     except Exception as e:
+#         print(f"Error: {str(e)}")  # چاپ خطا در کنسول
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"خطا در ثبت درخواست مرخصی: {str(e)}"
+#         )
+
+
+@router.post("/leave_request", tags=["leave"])
 def create_leave_request(
     leave_data: LeaveRequestCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
-        print("Request received at /leave")  # بررسی دریافت درخواست
-        print(f"Current User: {current_user}")  # چاپ اطلاعات کاربر
-        print(f"User ID: {current_user.id}, Level: {current_user.level}, Role: {current_user.role}")
+        # تبدیل تاریخ‌های شمسی به میلادی
+        try:
+            today = date.today()
 
-        # بررسی وجود درخواست تایید شده در سطح کاربر
-        existing_request = db.query(LeaveRequest).filter(
-            LeaveRequest.level == current_user.level,
-            LeaveRequest.status == "approved"
+            if leave_data.start_date < today or leave_data.end_date < today:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="تاریخ شروع یا پایان نمی‌تواند قبل از امروز باشد."
+                )
+            # تبدیل تاریخ‌های شمسی به میلادی
+            start_date_gregorian = leave_data.start_date
+            end_date_gregorian = leave_data.end_date
+
+            print(f"Received Start Date (Gregorian): {start_date_gregorian}")
+            print(f"Received End Date (Gregorian): {end_date_gregorian}")
+
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="فرمت تاریخ نامعتبر است. لطفاً تاریخ‌ها را به فرمت YYYY-MM-DD ارسال کنید."
+            )
+        
+        # بررسی وجود درخواست مرخصی تکراری برای کاربر فعلی
+        existing_user_request = db.query(LeaveRequest).filter(
+            LeaveRequest.user_id == current_user.id,
+            LeaveRequest.start_date <= end_date_gregorian,
+            LeaveRequest.end_date >= start_date_gregorian
         ).first()
-        print(f"Existing Request: {existing_request}")  # چاپ درخواست موجود
 
-        if existing_request:
-            status = "waiting"
-        else:
-            status = "pending"
+        if existing_user_request:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="شما قبلاً برای این بازه زمانی درخواست مرخصی ثبت کرده‌اید."
+            )
 
+        # بررسی وجود درخواست مرخصی در سطح کاربر فعلی
+        existing_level_request = db.query(LeaveRequest).filter(
+            LeaveRequest.level == current_user.level,
+            LeaveRequest.start_date <= end_date_gregorian,
+            LeaveRequest.end_date >= start_date_gregorian
+        ).first()
+
+        if existing_level_request:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="در این بازه زمانی، کاربری در سطح شما قبلاً درخواست مرخصی ثبت کرده است."
+            )
+
+        # ایجاد درخواست جدید
         new_leave = LeaveRequest(
             user_id=current_user.id,
-            start_date=leave_data.start_date,
-            end_date=leave_data.end_date,
+            start_date=start_date_gregorian,
+            end_date=end_date_gregorian,
             reason=leave_data.reason,
-            status=status,
+            status="pending", 
             level=current_user.level
         )
-        print(f"New Leave Request: {new_leave}")  # چاپ درخواست جدید
 
         db.add(new_leave)
         db.commit()
         db.refresh(new_leave)
-        return new_leave
+
+        # بازگشت اطلاعات درخواست جدید
+        return {
+            "id": new_leave.id,
+            "start_date": leave_data.start_date,
+            "end_date": leave_data.end_date,
+            "reason": new_leave.reason,
+            "status": new_leave.status
+        }
+
     except Exception as e:
         print(f"Error: {str(e)}")  # چاپ خطا در کنسول
         raise HTTPException(
@@ -58,28 +154,54 @@ def create_leave_request(
             detail=f"خطا در ثبت درخواست مرخصی: {str(e)}"
         )
 
-@router.get("/leave-requests", tags=["leave"])
-def get_leave_requests(
+@router.get("/user-leave-requests", tags=["leave"])
+def get_user_leave_requests(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)  # احراز هویت کاربر
 ):
-    # سوپرادمین می‌تواند تمام درخواست‌ها را مشاهده کند
-    if current_user.role == "superadmin":
-        return db.query(LeaveRequest).all()
+    """
+    دریافت لیست درخواست‌های مرخصی کاربر فعلی
+    """
+    try:
+        leave_requests = db.query(LeaveRequest).filter(
+            LeaveRequest.user_id == current_user.id
+        ).all()
 
-    # مدیر، سوپروایزر و تیم لید فقط می‌توانند درخواست‌های مربوط به واحد خودشان را مشاهده کنند
-    elif current_user.role in ["manager", "supervisor", "team_lead"]:
-        return db.query(LeaveRequest).join(User).filter(User.unit == current_user.unit).all()
+        # تبدیل تاریخ‌ها به شمسی
+        leave_requests_shamsi = []
+        for request in leave_requests:
+            leave_requests_shamsi.append({
+                "id": request.id,
+                "start_date": jdatetime.date.fromgregorian(date=request.start_date).strftime("%Y/%m/%d"),
+                "end_date": jdatetime.date.fromgregorian(date=request.end_date).strftime("%Y/%m/%d"),
+                "reason": request.reason,
+                "status": request.status
+            })
 
-    # کارمند فقط می‌تواند درخواست‌های خودش را مشاهده کند
-    elif current_user.role == "employee":
-        return db.query(LeaveRequest).filter(LeaveRequest.user_id == current_user.id).all()
+        return leave_requests_shamsi
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="خطا در دریافت لیست درخواست‌های مرخصی"
+        )
+    # # سوپرادمین می‌تواند تمام درخواست‌ها را مشاهده کند
+    # if current_user.role == "manager":  #SUPERUSER
+    #     return db.query(LeaveRequest).all()
 
-    # اگر نقش کاربر مشخص نیست، دسترسی ممنوع است
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="شما دسترسی لازم برای مشاهده درخواست‌ها را ندارید"
-    )
+    # # مدیر، سوپروایزر و تیم لید فقط می‌توانند درخواست‌های مربوط به واحد خودشان را مشاهده کنند
+    # elif current_user.role in ["manager", "supervisor", "team_lead"]:
+    #     return db.query(LeaveRequest).join(User).filter(User.unit == current_user.unit).all()
+
+    # # کارمند فقط می‌تواند درخواست‌های خودش را مشاهده کند
+    # elif current_user.role == "employee":
+    #     return db.query(LeaveRequest).filter(LeaveRequest.user_id == current_user.id).all()
+
+    # # اگر نقش کاربر مشخص نیست، دسترسی ممنوع است
+    # raise HTTPException(
+    #     status_code=status.HTTP_403_FORBIDDEN,
+    #     detail="شما دسترسی لازم برای مشاهده درخواست‌ها را ندارید"
+    # )
 
 
 @router.put("/leave/{leave_id}/status", tags=["leave"])
