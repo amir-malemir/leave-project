@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}صفحه درخواست‌ها{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">لیست درخواست‌های مرخصی</h1>
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>شناسه</th>
+                <th>تاریخ شروع</th>
+                <th>تاریخ پایان</th>
+                <th>وضعیت</th>
+                <th>دلیل</th>
+            </tr>
+        </thead>
+        <tbody id="requests-table">
+            <!-- داده‌ها به صورت داینامیک اضافه می‌شوند -->
+        </tbody>
+    </table>
+</div>
+{% endblock %}
