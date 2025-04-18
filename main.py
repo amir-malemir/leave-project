@@ -7,6 +7,7 @@ from starlette.requests import Request
 from dependencies import engine, Base
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+import inspect
 
 
 import models
@@ -22,6 +23,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+for route in app.routes:
+    print(f"{route.path} --> {route.name}")
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # یا لیست دامنه‌های مجاز
@@ -32,6 +37,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(leave.router)
+print("✔ leave router included")
 app.include_router(reports.router)
 
 @app.get("/", response_class=HTMLResponse)

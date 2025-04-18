@@ -206,30 +206,30 @@ def get_user_leave_requests(
     # )
 
 
-@router.put("/leave/{leave_id}/status", tags=["leave"])
-def update_leave_status(
-    leave_id: int,
-    status: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    if current_user.role not in ["manager", "supervisor"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="شما اجازه تغییر وضعیت درخواست‌ها را ندارید."
-        )
+# @router.put("/leave/{leave_id}/status", tags=["leave"])
+# def update_leave_status(
+#     leave_id: int,
+#     status: str,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     if current_user.role not in ["manager", "supervisor"]:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="شما اجازه تغییر وضعیت درخواست‌ها را ندارید."
+#         )
 
-    leave_request = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
-    if not leave_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="درخواست مرخصی یافت نشد."
-        )
+#     leave_request = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
+#     if not leave_request:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="درخواست مرخصی یافت نشد."
+#         )
 
-    leave_request.status = status
-    db.commit()
-    db.refresh(leave_request)
-    return leave_request
+#     leave_request.status = status
+#     db.commit()
+#     db.refresh(leave_request)
+#     return leave_request
 
 
 
@@ -320,6 +320,14 @@ def leave_report(
         "rejected_requests": rejected_count
     }
 
+# all request 
+@router.get("/all-leave-requests-page", response_class=HTMLResponse)
+async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["manager", "admin"]:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    
+    return templates.TemplateResponse("all_leave_requests.html", {"request": request})
+
 
 @router.get("/all-leave-requests", response_model=List[LeaveRequestOut])
 def get_all_leave_requests(
@@ -333,3 +341,7 @@ def get_all_leave_requests(
         )
 
     return db.query(LeaveRequest).all()
+
+@router.get("/test-leave")
+def test_leave():
+    return {"message": "leave router is working"}

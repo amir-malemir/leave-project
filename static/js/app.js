@@ -540,22 +540,25 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // دریافت داده‌ها از API
-    fetch('/all-leave-requests')
-    .then(response => response.json())
-    .then(data => {
-    const tableBody = document.getElementById('leave-requests-table-body');
-    data.forEach(request => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-        <td>${request.user_id}</td>
-        <td>${request.start_date}</td>
-        <td>${request.end_date}</td>
-        <td>${request.reason}</td>
-        <td>${request.status}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-    })
-    .catch(error => console.error('Error fetching leave requests:', error));
+    fetch("/all-leave-requests")
+        .then(response => response.json())
+        .then(data => {
+            const table = document.getElementById("leave-requests-table");
+            data.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.user_id}</td>
+                    <td>${item.start_date}</td>
+                    <td>${item.end_date}</td>
+                    <td>${item.status}</td>
+                    <td>${item.reason}</td>
+                `;
+                table.appendChild(row);
+            });
+        })
+        .catch(err => {
+            console.error("Error fetching leave requests:", err);
+        });
     
 });
