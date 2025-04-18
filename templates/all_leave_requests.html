@@ -1,26 +1,33 @@
-<!DOCTYPE html>
-<html lang="fa">
-<head>
-    <meta charset="UTF-8">
-    <title>همه درخواست‌های مرخصی</title>
-    <script src="/static/js/all_leave_requests.js" defer></script>
-</head>
-<body>
-    <h1>همه درخواست‌های مرخصی</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>شناسه</th>
-                <th>کاربر</th>
-                <th>تاریخ شروع</th>
-                <th>تاریخ پایان</th>
-                <th>وضعیت</th>
-                <th>دلیل</th>
-            </tr>
-        </thead>
-        <tbody id="leave-requests-table">
-            <!-- داده‌ها اینجا میاد -->
-        </tbody>
-    </table>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}کل درخواست ها{% endblock %}
+{% block content %}
+    <div class="content">
+        <h1 class="text-center my-4">درخواست های مرخصی</h1>
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="table-responsive table-container overflow-auto">
+                    <table class="table table-striped table-hover align-middle text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-nowrap">شناسه</th>
+                                <th class="text-nowrap">نام کاربری</th>
+                                <th class="text-nowrap">شروع</th>
+                                <th class="text-nowrap">پایان</th>
+                                <th class="text-nowrap">وضعیت</th>
+                                <th class="text-nowrap">دلیل</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leave-requests-table">
+                        </tbody>
+                        <button id="export-excel-btn" class="btn btn-success">📥 خروجی اکسل</button>
+                    </table>
+                    
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

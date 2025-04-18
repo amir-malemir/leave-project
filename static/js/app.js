@@ -65,45 +65,8 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
     // مدیریت فرم لاگین
-    // const loginForm = document.getElementById("login-form");
-    // if (loginForm) {
-    //     loginForm.addEventListener("submit", async function (e) {
-    //         e.preventDefault();
-    //         console.log("فرم لاگین ارسال شد!");
-
-    //         const username = document.getElementById("username").value;
-    //         const password = document.getElementById("password").value;
-
-    //         try {
-    //             const response = await fetch("http://127.0.0.1:8000/token", {
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/x-www-form-urlencoded"
-    //                 },
-    //                 body: new URLSearchParams({
-    //                     username: username,
-    //                     password: password
-    //                 })
-    //             });
-
-    //             if (response.ok) {
-    //                 const data = await response.json();
-    //                 console.log("توکن دریافت شد:", data.access_token);
-    //                 localStorage.setItem("token", data.access_token);
-    //                 showAlert("ورود موفقیت‌آمیز بود!", "success"); // پیام موفقیت
-    //                 window.location.href = "/dashboard";
-    //             } else {
-    //                 const errorData = await response.json();
-    //                 console.error("خطای لاگین:", errorData.detail);
-    //                 showAlert(errorData.detail || "نام کاربری یا رمز عبور اشتباه است!", "danger"); // پیام خطا
-    //             }
-    //         } catch (error) {
-    //             console.error("خطای درخواست:", error);
-    //             showAlert("خطایی رخ داد!", "danger"); // پیام خطای عمومی
-    //         }
-    //     });
-    // }
 
 
     const loginForm = document.getElementById("login-form");
@@ -261,46 +224,6 @@ document.addEventListener("DOMContentLoaded", function () {
             showAlert("خطا در دریافت اطلاعات داشبورد!", "danger");
         }
     }
-
-    // دریافت لیست درخواست‌ها
-    // async function loadUserLeaveRequests() {
-    //     console.log("در حال بارگذاری لیست درخواست‌های مرخصی کاربر...");
-    //     try {
-    //         const token = localStorage.getItem("token");
-    //         console.log("توکن موجود در localStorage:", token);
-        
-    //         if (!token) {
-    //             console.error("توکن یافت نشد!");
-    //             alert("لطفاً وارد شوید!");
-    //             window.location.href = "/login";
-    //             return;
-    //         }
-        
-    //         const response = await fetch("/user-leave-requests", {
-    //             method: "GET",
-    //             headers: {
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
-        
-    //         console.log("وضعیت پاسخ دریافت شده:", response.status);
-        
-    //         if (response.ok) {
-    //             const requests = await response.json();
-    //             console.log("لیست درخواست‌های مرخصی کاربر دریافت شد:", requests);
-    //             renderLeaveRequests(requests);
-    //         } else if (response.status === 401) {
-    //             console.error("توکن نامعتبر است یا منقضی شده!");
-    //             alert("توکن نامعتبر است یا منقضی شده! لطفاً دوباره وارد شوید.");
-    //             localStorage.removeItem("token");
-    //             window.location.href = "/login";
-    //         } else {
-    //             console.error("خطا در دریافت لیست درخواست‌ها!");
-    //         }
-    //     } catch (error) {
-    //         console.error("خطا در دریافت لیست درخواست‌ها:", error);
-    //     }
-    // }
 
     // دریافت لیست درخواست‌های مرخصی از سرور
     async function loadUserLeaveRequests() {
@@ -548,11 +471,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 const row = document.createElement("tr");
                 row.innerHTML = `
                     <td>${item.id}</td>
-                    <td>${item.user_id}</td>
-                    <td>${item.start_date}</td>
-                    <td>${item.end_date}</td>
+                    <td>${item.user?.username}</td>
+                    <td>${item.startDate || "-"}</td>
+                    <td>${item.endDate || "-"}</td>
                     <td>${item.status}</td>
-                    <td>${item.reason}</td>
+                    <td>${item.reason || ""}</td>
                 `;
                 table.appendChild(row);
             });
@@ -560,5 +483,42 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => {
             console.error("Error fetching leave requests:", err);
         });
+    // اکسل
+    document.getElementById("export-excel-btn").addEventListener("click", async function () {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch("/all-leave-requests", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
     
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || "خطا در دریافت داده‌ها");
+            }
+    
+            // تبدیل داده‌ها به فرمت اکسل
+            const excelData = data.map((req, index) => ({
+                "#": index + 1,
+                "نام کاربر": req.user?.username || "بدون نام",
+                "تاریخ شروع": req.startDate,
+                "تاریخ پایان": req.endDate,
+                "نوع مرخصی": req.leaveType,
+                "توضیحات": req.reason,
+                "وضعیت": req.status,
+            }));
+    
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "درخواست‌ها");
+    
+            // خروجی فایل
+            XLSX.writeFile(workbook, "leave-requests.xlsx");
+        } catch (error) {
+            console.error(error);
+            showAlert("خطا در گرفتن خروجی اکسل", "error");
+        }
+    });
+
 });
