@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from typing import Optional, List
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -8,6 +9,7 @@ from dependencies import get_db
 from models import LeaveRequest, User
 from .auth import get_current_user
 import jdatetime
+from schemas import LeaveRequestOut
 
 
 router = APIRouter()
@@ -317,3 +319,17 @@ def leave_report(
         "approved_requests": approved_count,
         "rejected_requests": rejected_count
     }
+
+
+@router.get("/all-leave-requests", response_model=List[LeaveRequestOut])
+def get_all_leave_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["manager", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="شما اجازه دسترسی به تمامی درخواست‌ها را ندارید."
+        )
+
+    return db.query(LeaveRequest).all()
