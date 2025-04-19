@@ -37,7 +37,6 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(leave.router)
-print("✔ leave router included")
 app.include_router(reports.router)
 
 @app.get("/", response_class=HTMLResponse)

@@ -91,11 +91,9 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
 @router.get("/dashboard", response_class=HTMLResponse, tags=["dashboard"])
-def dashboard_page(request: Request):
-    """
-    نمایش صفحه داشبورد بدون نیاز به احراز هویت.
-    """
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+def dashboard_page(request: Request, current_user: User = Depends(get_current_user)):
+    
+    return templates.TemplateResponse("dashboard.html", {"request": request, "user_role": current_user.role})
 
 
 @router.get("/dashboard-data", tags=["dashboard"])

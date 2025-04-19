@@ -224,6 +224,9 @@ document.addEventListener("DOMContentLoaded", function () {
             showAlert("خطا در دریافت اطلاعات داشبورد!", "danger");
         }
     }
+    if (window.location.pathname === "/leave-requests-page") {
+        loadUserLeaveRequests();
+    }
 
     // دریافت لیست درخواست‌های مرخصی از سرور
     async function loadUserLeaveRequests() {
@@ -257,6 +260,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${request.id}</td>
+                <td>${request.username || "?"}</td>
                 <td>${request.start_date}</td>
                 <td>${request.end_date}</td>
                 <td>
@@ -450,7 +454,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (response.ok) {
                     alert("درخواست مرخصی با موفقیت ثبت شد!");
-                    window.location.href = "/leave-requests";
+                    window.location.href = "/leave-requests-page";
                 } else {
                     const errorData = await response.json();
                     alert(errorData.detail || "خطا در ثبت درخواست مرخصی!");
