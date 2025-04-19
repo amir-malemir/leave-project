@@ -43,3 +43,10 @@ class LeaveRequest(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     user = relationship("User", back_populates="leave_requests")
+
+class AdminSetting(Base):
+    __tablename__ = "admin_settings"
+
+    id = Column(Integer, primary_key=True)
+    max_leave_days = Column(Integer, default=30)
+    default_shift = Column(String, nullable=True)   

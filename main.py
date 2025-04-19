@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Response, Depends
 from fastapi.staticfiles import StaticFiles
-from routers import leave, auth, users, reports
+from routers import leave, auth, users, reports, settings
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.requests import Request
-from dependencies import engine, Base
+from dependencies import engine, Base, get_db
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 import inspect
@@ -38,6 +38,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(leave.router)
 app.include_router(reports.router)
+app.include_router(settings.router)
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
@@ -45,8 +46,5 @@ def read_root(request: Request):
 
 @app.post("/logout")
 def logout(response: Response):
-    """
-    حذف کوکی توکن هنگام خروج.
-    """
     response.delete_cookie("access_token")
     return {"message": "خروج موفقیت‌آمیز بود"}

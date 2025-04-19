@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>تنظیمات کاربر</h3>
+    <form method="post" action="/update-profile">
+        <div class="mb-3">
+            <label class="form-label">نام کامل</label>
+            <input type="text" class="form-control" name="full_name" value="{{ user.full_name }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">ایمیل</label>
+            <input type="email" class="form-control" name="email" value="{{ user.email }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">رمز عبور جدید (اختیاری)</label>
+            <input type="password" class="form-control" name="new_password">
+        </div>
+        <button type="submit" class="btn btn-primary">ذخیره</button>
+    </form>
+</div>
+{% endblock %}

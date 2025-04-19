@@ -40,3 +40,7 @@ class LeaveRequestOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class AdminSettingsUpdate(BaseModel):
+    max_leave_days: int
+    default_shift: Optional[str]
