@@ -16,6 +16,8 @@ router = APIRouter()
 
 templates = Jinja2Templates(directory="templates")
 
+AUTHORIZED_ROLES = ["admin", "manager", "team_lead", "supervisor"]
+
 # مدل پایتون جهت ثبت درخواست مرخصی
 class LeaveRequestCreate(BaseModel):
     start_date: date
@@ -29,46 +31,6 @@ async def create_leave_request_page(request: Request):
     صفحه ایجاد درخواست مرخصی
     """
     return templates.TemplateResponse("create_leave_request.html", {"request": request})
-
-# @router.post("/leave", tags=["leave"])
-# def create_leave_request(
-#     leave_data: LeaveRequestCreate,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     try:
-#         # بررسی وجود درخواست تایید شده در سطح کاربر
-#         existing_request = db.query(LeaveRequest).filter(
-#             LeaveRequest.level == current_user.level,
-#             LeaveRequest.status == "approved"
-#         ).first()
-#         print(f"Existing Request: {existing_request}")  # چاپ درخواست موجود
-
-#         if existing_request:
-#             status = "waiting"
-#         else:
-#             status = "pending"
-
-#         new_leave = LeaveRequest(
-#             user_id=current_user.id,
-#             start_date=leave_data.start_date,
-#             end_date=leave_data.end_date,
-#             reason=leave_data.reason,
-#             status=status,
-#             level=current_user.level
-#         )
-#         print(f"New Leave Request: {new_leave}")  # چاپ درخواست جدید
-
-#         db.add(new_leave)
-#         db.commit()
-#         db.refresh(new_leave)
-#         return new_leave
-#     except Exception as e:
-#         print(f"Error: {str(e)}")  # چاپ خطا در کنسول
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail=f"خطا در ثبت درخواست مرخصی: {str(e)}"
-#         )
 
 
 @router.post("/leave_request", tags=["leave"])
@@ -156,6 +118,10 @@ def create_leave_request(
             detail=f"خطا در ثبت درخواست مرخصی: {str(e)}"
         )
 
+@router.get("/leave-requests-page", response_class=HTMLResponse)
+def show_user_leave_requests_page(request: Request):
+    return templates.TemplateResponse("user_leave_requests.html", {"request": request})
+
 @router.get("/user-leave-requests", tags=["leave"])
 def get_user_leave_requests(
     db: Session = Depends(get_db),
@@ -174,6 +140,7 @@ def get_user_leave_requests(
         for request in leave_requests:
             leave_requests_shamsi.append({
                 "id": request.id,
+                "username": current_user.username,  # این خط اضافه بشه
                 "start_date": jdatetime.date.fromgregorian(date=request.start_date).strftime("%Y/%m/%d"),
                 "end_date": jdatetime.date.fromgregorian(date=request.end_date).strftime("%Y/%m/%d"),
                 "reason": request.reason,
@@ -323,16 +290,19 @@ def get_user_leave_requests(
 # all request 
 @router.get("/all-leave-requests-page", response_class=HTMLResponse)
 async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
-    if current_user.role not in ["manager", "admin"]:
+    if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
     return templates.TemplateResponse("all_leave_requests.html", {"request": request})
 
 
 @router.get("/all-leave-requests")
-def get_all_leave_requests(db: Session = Depends(get_db)):
-    leave_requests = db.query(LeaveRequest).options(joinedload(LeaveRequest.user)).all()
+def get_all_leave_requests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    print(current_user)
+    if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
+    leave_requests = db.query(LeaveRequest).options(joinedload(LeaveRequest.user)).all()
     result = []
     for req in leave_requests:
         result.append({
