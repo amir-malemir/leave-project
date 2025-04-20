@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from dependencies import get_db
@@ -6,7 +6,8 @@ from models import User, LeaveRequest
 from .auth import get_password_hash, verify_password, create_access_token
 from typing import Optional, List
 from .auth import get_current_user
-from fastapi.responses import HTMLResponse
+from starlette.status import HTTP_302_FOUND
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
 from schemas import UserOut, RoleUpdate
@@ -175,3 +176,30 @@ def update_user_role(user_id: int, role_update: RoleUpdate, current_user: User =
     user.role = role_update.role
     db.commit()
     return {"message": "نقش کاربر با موفقیت تغییر کرد"}
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return templates.TemplateResponse("settings.html", {
+        "request": request,
+        "user": current_user
+    })
+
+@router.post("/update-profile")
+def update_profile(
+    request: Request,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    new_password: str = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    current_user.full_name = full_name
+    current_user.email = email
+    if new_password:
+        current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)

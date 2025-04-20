@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.location.href = "/dashboard";
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.detail || "نام کاربری یا رمز عبور اشتباه است!");
+                    showAlert("نام کاربری یا رمز عبور اشتباه است!", "danger");
                 }
             } catch (error) {
                 console.error("خطا در ارسال درخواست ورود:", error);

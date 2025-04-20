@@ -12,32 +12,32 @@ from fastapi.templating import Jinja2Templates
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-@router.get("/settings", response_class=HTMLResponse)
-def settings_page(
-    request: Request,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    return templates.TemplateResponse("settings.html", {
-        "request": request,
-        "user": current_user
-    })
+# @router.get("/settings", response_class=HTMLResponse)
+# def settings_page(
+#     request: Request,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     return templates.TemplateResponse("settings.html", {
+#         "request": request,
+#         "user": current_user
+#     })
 
-@router.post("/update-profile")
-def update_profile(
-    request: Request,
-    full_name: str = Form(...),
-    email: str = Form(...),
-    new_password: str = Form(None),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    current_user.full_name = full_name
-    current_user.email = email
-    if new_password:
-        current_user.set_password(new_password)  # تابعی که رمز رو هش می‌کنه
-    db.commit()
-    return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)
+# @router.post("/update-profile")
+# def update_profile(
+#     request: Request,
+#     full_name: str = Form(...),
+#     email: str = Form(...),
+#     new_password: str = Form(None),
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     current_user.full_name = full_name
+#     current_user.email = email
+#     if new_password:
+#         current_user.set_password(new_password)  # تابعی که رمز رو هش می‌کنه
+#     db.commit()
+#     return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)
 
 # router = APIRouter()
 # templates = Jinja2Templates(directory="templates")
