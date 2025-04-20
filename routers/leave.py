@@ -26,11 +26,11 @@ class LeaveRequestCreate(BaseModel):
 
 # leave request
 @router.get("/create-leave-request", response_class=HTMLResponse)
-async def create_leave_request_page(request: Request):
+async def create_leave_request_page(request: Request, current_user: User = Depends(get_current_user)):
     """
     صفحه ایجاد درخواست مرخصی
     """
-    return templates.TemplateResponse("create_leave_request.html", {"request": request})
+    return templates.TemplateResponse("create_leave_request.html", {"request": request, "user_role": current_user.role})
 
 
 @router.post("/leave_request", tags=["leave"])
@@ -119,8 +119,8 @@ def create_leave_request(
         )
 
 @router.get("/leave-requests-page", response_class=HTMLResponse)
-def show_user_leave_requests_page(request: Request):
-    return templates.TemplateResponse("user_leave_requests.html", {"request": request})
+def show_user_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse("user_leave_requests.html", {"request": request, "user_role": current_user.role})
 
 @router.get("/user-leave-requests", tags=["leave"])
 def get_user_leave_requests(
@@ -293,7 +293,7 @@ async def all_leave_requests_page(request: Request, current_user: User = Depends
     if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    return templates.TemplateResponse("all_leave_requests.html", {"request": request})
+    return templates.TemplateResponse("all_leave_requests.html", {"request": request, "user_role": current_user.role})
 
 
 @router.get("/all-leave-requests")

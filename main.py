@@ -7,6 +7,7 @@ from starlette.requests import Request
 from dependencies import engine, Base, get_db
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from routers.context_processors import inject_user_role
 import inspect
 
 
@@ -22,10 +23,7 @@ Base.metadata.create_all(bind=engine)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
-
-for route in app.routes:
-    print(f"{route.path} --> {route.name}")
-
+templates.env.globals.update(inject_user_role=inject_user_role)
 
 app.add_middleware(
     CORSMiddleware,
