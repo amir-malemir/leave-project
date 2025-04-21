@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import Optional, List
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from core.templates import templates
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from datetime import date
@@ -14,7 +14,7 @@ from schemas import LeaveRequestOut
 
 router = APIRouter()
 
-templates = Jinja2Templates(directory="templates")
+# templates = Jinja2Templates(directory="templates")
 
 AUTHORIZED_ROLES = ["admin", "manager", "team_lead", "supervisor"]
 
@@ -27,9 +27,6 @@ class LeaveRequestCreate(BaseModel):
 # leave request
 @router.get("/create-leave-request", response_class=HTMLResponse)
 async def create_leave_request_page(request: Request, current_user: User = Depends(get_current_user)):
-    """
-    صفحه ایجاد درخواست مرخصی
-    """
     return templates.TemplateResponse("create_leave_request.html", {"request": request, "user_role": current_user.role})
 
 

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h3>ویرایش کاربر</h3>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">نام کامل</label>
+            <input type="text" class="form-control" name="full_name" value="{{ user_to_edit.full_name }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">ایمیل</label>
+            <input type="email" class="form-control" name="email" value="{{ user_to_edit.email }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">شماره همراه</label>
+            <input type="email" class="form-control" name="email" value="{{ user_to_edit.phone_number }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">واحد</label>
+            <select class="form-select" name="unit">
+                <option value="noc" {% if user_to_edit.unit == "noc" %}selected{% endif %}>NOC</option>
+                <option value="callcenter" {% if user_to_edit.unit == "callcenter" %}selected{% endif %}>Call Center</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">نقش</label>
+            <select class="form-select" name="role">
+                <option value="employee" {% if user_to_edit.role == "employee" %}selected{% endif %}>کارمند</option>
+                <option value="team_lead" {% if user_to_edit.role == "team_lead" %}selected{% endif %}>سرگروه</option>
+                <option value="supervisor" {% if user_to_edit.role == "supervisor" %}selected{% endif %}>سرپرست</option>
+                <option value="manager" {% if user_to_edit.role == "manager" %}selected{% endif %}>مدیر</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">ذخیره تغییرات</button>
+        <a href="/user-management-page" class="btn btn-secondary">انصراف</a>
+    </form>
+</div>
+{% endblock %}

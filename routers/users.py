@@ -8,7 +8,7 @@ from typing import Optional, List
 from .auth import get_current_user
 from starlette.status import HTTP_302_FOUND
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
+from core.templates import templates
 from starlette.requests import Request
 from schemas import UserOut, RoleUpdate
 
@@ -16,7 +16,7 @@ from schemas import UserOut, RoleUpdate
 router = APIRouter()
 
 
-templates = Jinja2Templates(directory="templates")
+# templates = Jinja2Templates(directory="templates")
 
 # مدل پایتون برای دریافت اطلاعات کاربر جهت ثبت در دیتابیس
 class UserCreate(BaseModel):
@@ -146,25 +146,34 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": db_user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/user-management-page", response_class=HTMLResponse, tags=["users"])
-def user_management_page(request: Request):
-    """
-    نمایش صفحه مدیریت کاربران.
-    """
-    return templates.TemplateResponse("user_management.html", {"request": request})
+# @router.get("/user-management-page", response_class=HTMLResponse, tags=["users"])
+# def user_management_page(request: Request):
+#     """
+#     نمایش صفحه مدیریت کاربران.
+#     """
+#     return templates.TemplateResponse("user_management.html", {"request": request})
 
 
-@router.get("/user-management", response_model=List[UserOut], tags=["users"])
-def get_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """
-    دریافت لیست کاربران برای مدیریت.
-    """
+# @router.get("/user-management", response_model=List[UserOut], tags=["users"])
+# def get_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+#     if current_user.role == "manager":
+#         return db.query(User).all()
+#     elif current_user.role in ["supervisor", "team_lead"]:
+#         return db.query(User).filter(User.unit == current_user.unit).all()
+#     else:
+#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+
+
+@router.get("/user-management-page", response_class=HTMLResponse)
+def user_management_page(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role == "manager":
-        return db.query(User).all()
+        users = db.query(User).all()
     elif current_user.role in ["supervisor", "team_lead"]:
-        return db.query(User).filter(User.unit == current_user.unit).all()
+        users = db.query(User).filter(User.unit == current_user.unit).all()
     else:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    return templates.TemplateResponse("user_management.html", {"request": request, "users": users})
+
 
 @router.put("/user-management/{user_id}/role")
 def update_user_role(user_id: int, role_update: RoleUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -176,6 +185,58 @@ def update_user_role(user_id: int, role_update: RoleUpdate, current_user: User =
     user.role = role_update.role
     db.commit()
     return {"message": "نقش کاربر با موفقیت تغییر کرد"}
+
+@router.get("/edit-user/{user_id}", response_class=HTMLResponse)
+def edit_user_page(user_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="کاربر یافت نشد")
+    if current_user.role != "manager":
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    
+    return templates.TemplateResponse("edit_user.html", {
+        "request": request,
+        "user_to_edit": user
+    })
+
+@router.post("/edit-user/{user_id}")
+def update_user(
+    user_id: int,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    unit: str = Form(...),
+    role: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "manager":
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="کاربر یافت نشد")
+
+    user.full_name = full_name
+    user.email = email
+    user.unit = unit
+    user.role = role
+    db.commit()
+
+    return RedirectResponse(url="/user-management-page", status_code=302)
+
+@router.post("/delete-user/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != "manager":
+        raise HTTPException(status_code=403, detail="فقط مدیر می‌تواند کاربران را حذف کند")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="کاربر یافت نشد")
+
+    db.delete(user)
+    db.commit()
+    return RedirectResponse(url="/user-management-page", status_code=302)
+
 
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(

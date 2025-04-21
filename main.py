@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response, Depends
 from fastapi.staticfiles import StaticFiles
-from routers import leave, auth, users, reports, settings
-from fastapi.templating import Jinja2Templates
+from routers import leave, auth, users, reports
+from core.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.requests import Request
 from dependencies import engine, Base, get_db
@@ -22,8 +22,19 @@ Base.metadata.create_all(bind=engine)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates(directory="templates")
-templates.env.globals.update(inject_user_role=inject_user_role)
+# templates = Jinja2Templates(directory="templates")
+
+def fa_role(role):
+    mapping = {
+        "Role.EMPLOYEE": "کارمند",
+        "Role.MANAGER": "مدیر",
+        "Role.SUPERVISOR": "سرپرست",
+        "Role.TEAM_LEAD": "رهبر تیم",
+    }
+    return mapping.get(role, "نامشخص")
+
+# ثبت فیلتر
+templates.env.filters["fa_role"] = fa_role
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,7 +47,6 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(leave.router)
 app.include_router(reports.router)
-app.include_router(settings.router)
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):

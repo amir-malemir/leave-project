@@ -281,35 +281,35 @@ document.addEventListener("DOMContentLoaded", function () {
     // فراخوانی تابع هنگام بارگذاری صفحه
     document.addEventListener("DOMContentLoaded", loadUserLeaveRequests);
 
-    // دریافت لیست کاربران
-    async function loadUsers() {
-        console.log("در حال بارگذاری لیست کاربران...");
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.error("توکن یافت نشد!");
-                window.location.href = "/login";
-                return;
-            }
+    // // دریافت لیست کاربران
+    // async function loadUsers() {
+    //     console.log("در حال بارگذاری لیست کاربران...");
+    //     try {
+    //         const token = localStorage.getItem("token");
+    //         if (!token) {
+    //             console.error("توکن یافت نشد!");
+    //             window.location.href = "/login";
+    //             return;
+    //         }
 
-            const response = await fetch("/user-management", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+    //         const response = await fetch("/user-management", {
+    //             method: "GET",
+    //             headers: {
+    //                 "Authorization": `Bearer ${token}`
+    //             }
+    //         });
 
-            if (response.ok) {
-                const users = await response.json();
-                console.log("لیست کاربران دریافت شد:", users);
-                renderUsers(users);
-            } else {
-                console.error("خطا در دریافت لیست کاربران!");
-            }
-        } catch (error) {
-            console.error("خطا در دریافت لیست کاربران:", error);
-        }
-    }
+    //         if (response.ok) {
+    //             const users = await response.json();
+    //             console.log("لیست کاربران دریافت شد:", users);
+    //             renderUsers(users);
+    //         } else {
+    //             console.error("خطا در دریافت لیست کاربران!");
+    //         }
+    //     } catch (error) {
+    //         console.error("خطا در دریافت لیست کاربران:", error);
+    //     }
+    // }
 
     // نمایش لیست کاربران
     function renderUsers(users) {
@@ -389,10 +389,10 @@ document.addEventListener("DOMContentLoaded", function () {
         loadLeaveRequests();
     }
 
-    // اگر در صفحه مدیریت کاربران هستیم
-    if (window.location.pathname.startsWith("/user-management")) {
-        loadUsers();
-    }
+    // // اگر در صفحه مدیریت کاربران هستیم
+    // if (window.location.pathname.startsWith("/user-management")) {
+    //     loadUsers();
+    // }
     
 
     const leaveRequestForm = document.getElementById("leave-request-form");
