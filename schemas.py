@@ -44,3 +44,14 @@ class LeaveRequestOut(BaseModel):
 class AdminSettingsUpdate(BaseModel):
     max_leave_days: int
     default_shift: Optional[str]
+
+
+class UserUpdate(BaseModel):
+    username: str | None = None
+    email: str | None = None
+    full_name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
+    
+    class Config:
+        from_attributes = True
