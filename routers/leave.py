@@ -12,7 +12,7 @@ import jdatetime
 from schemas import LeaveRequestOut
 
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["users"])
 
 # templates = Jinja2Templates(directory="templates")
 
@@ -151,139 +151,6 @@ def get_user_leave_requests(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="خطا در دریافت لیست درخواست‌های مرخصی"
         )
-    # # سوپرادمین می‌تواند تمام درخواست‌ها را مشاهده کند
-    # if current_user.role == "manager":  #SUPERUSER
-    #     return db.query(LeaveRequest).all()
-
-    # # مدیر، سوپروایزر و تیم لید فقط می‌توانند درخواست‌های مربوط به واحد خودشان را مشاهده کنند
-    # elif current_user.role in ["manager", "supervisor", "team_lead"]:
-    #     return db.query(LeaveRequest).join(User).filter(User.unit == current_user.unit).all()
-
-    # # کارمند فقط می‌تواند درخواست‌های خودش را مشاهده کند
-    # elif current_user.role == "employee":
-    #     return db.query(LeaveRequest).filter(LeaveRequest.user_id == current_user.id).all()
-
-    # # اگر نقش کاربر مشخص نیست، دسترسی ممنوع است
-    # raise HTTPException(
-    #     status_code=status.HTTP_403_FORBIDDEN,
-    #     detail="شما دسترسی لازم برای مشاهده درخواست‌ها را ندارید"
-    # )
-
-
-# @router.put("/leave/{leave_id}/status", tags=["leave"])
-# def update_leave_status(
-#     leave_id: int,
-#     status: str,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.role not in ["manager", "supervisor"]:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="شما اجازه تغییر وضعیت درخواست‌ها را ندارید."
-#         )
-
-#     leave_request = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
-#     if not leave_request:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="درخواست مرخصی یافت نشد."
-#         )
-
-#     leave_request.status = status
-#     db.commit()
-#     db.refresh(leave_request)
-#     return leave_request
-
-
-
-# @router.put("/leave/{leave_id}/status", tags=["leave"])
-# def update_leave_status(
-#     leave_id: int,
-#     status: str,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     # بررسی نقش کاربر
-#     if current_user.role not in ["manager", "supervisor", "team_lead"]:
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="شما اجازه تغییر وضعیت درخواست‌ها را ندارید."
-#         )
-
-#     # پیدا کردن درخواست مرخصی
-#     leave_request = db.query(LeaveRequest).filter(LeaveRequest.id == leave_id).first()
-#     if not leave_request:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="درخواست مرخصی یافت نشد."
-#         )
-
-#     # پیدا کردن کاربری که درخواست مرخصی را ثبت کرده است
-#     request_user = db.query(User).filter(User.id == leave_request.user_id).first()
-#     if not request_user:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="کاربری که درخواست مرخصی را ثبت کرده است یافت نشد."
-#         )
-
-#     # منطق دسترسی بر اساس نقش
-#     if current_user.role == "team_lead":
-#         # تیم لید فقط می‌تواند درخواست‌های مربوط به بخش خودش را تغییر دهد
-#         if request_user.unit != current_user.unit:
-#             raise HTTPException(
-#                 status_code=status.HTTP_403_FORBIDDEN,
-#                 detail="تیم لید فقط می‌تواند وضعیت درخواست‌های بخش خودش را تغییر دهد."
-#             )
-
-#     elif current_user.role == "supervisor":
-#         # سوپروایزر فقط می‌تواند درخواست‌های مربوط به بخش خودش را تغییر دهد
-#         if request_user.unit != current_user.unit:
-#             raise HTTPException(
-#                 status_code=status.HTTP_403_FORBIDDEN,
-#                 detail="سوپروایزر فقط می‌تواند وضعیت درخواست‌های بخش خودش را تغییر دهد."
-#             )
-
-#     # مدیر نیازی به محدودیت ندارد و می‌تواند همه درخواست‌ها را تغییر دهد
-
-#     # تغییر وضعیت درخواست
-#     leave_request.status = status
-#     db.commit()
-#     db.refresh(leave_request)
-#     return leave_request
-
-
-
-# @router.get("/leave-report", tags=["leave"])
-# def leave_report(
-#     start_date: date,
-#     end_date: date,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.role != "manager":
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="شما اجازه دسترسی به گزارش‌ها را ندارید."
-#         )
-
-#     approved_count = db.query(LeaveRequest).filter(
-#         LeaveRequest.status == "approved",
-#         LeaveRequest.start_date >= start_date,
-#         LeaveRequest.end_date <= end_date
-#     ).count()
-
-#     rejected_count = db.query(LeaveRequest).filter(
-#         LeaveRequest.status == "rejected",
-#         LeaveRequest.start_date >= start_date,
-#         LeaveRequest.end_date <= end_date
-#     ).count()
-
-#     return {
-#         "approved_requests": approved_count,
-#         "rejected_requests": rejected_count
-#     }
-
 # all request 
 @router.get("/all-leave-requests-page", response_class=HTMLResponse)
 async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
@@ -318,3 +185,42 @@ def get_all_leave_requests(request: Request, db: Session = Depends(get_db), curr
         })
     
     return result
+
+@router.put("/{user_id}")
+def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. بررسی آیا کاربر جاری ادمین است
+    if current_user.role.lower() != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="فقط ادمین‌ها می‌توانند کاربران را ویرایش کنند"
+        )
+    
+    # 2. پیدا کردن کاربر هدف
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
+    
+    # 3. آپدیت فیلدها
+    update_data = user_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_user, field, value)
+    
+    db.commit()
+    db.refresh(db_user)
+    
+    return db_user
+
+@router.patch("/{user_id}")
+def partial_update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # مشابه PUT اما برای آپدیت جزئی
+    return update_user(user_id, user_data, db, current_user)
