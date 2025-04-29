@@ -146,23 +146,6 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": db_user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-# @router.get("/user-management-page", response_class=HTMLResponse, tags=["users"])
-# def user_management_page(request: Request):
-#     """
-#     نمایش صفحه مدیریت کاربران.
-#     """
-#     return templates.TemplateResponse("user_management.html", {"request": request})
-
-
-# @router.get("/user-management", response_model=List[UserOut], tags=["users"])
-# def get_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-#     if current_user.role == "manager":
-#         return db.query(User).all()
-#     elif current_user.role in ["supervisor", "team_lead"]:
-#         return db.query(User).filter(User.unit == current_user.unit).all()
-#     else:
-#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-
 
 @router.get("/user-management-page", response_class=HTMLResponse)
 def user_management_page(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -172,7 +155,7 @@ def user_management_page(request: Request, db: Session = Depends(get_db), curren
         users = db.query(User).filter(User.unit == current_user.unit).all()
     else:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-    return templates.TemplateResponse("user_management.html", {"request": request, "users": users})
+    return templates.TemplateResponse("user_management.html", {"request": request, "users": users, "user_role": current_user.role})
 
 
 @router.put("/user-management/{user_id}/role")
@@ -246,7 +229,8 @@ def settings_page(
 ):
     return templates.TemplateResponse("settings.html", {
         "request": request,
-        "user": current_user
+        "user": current_user,
+        "user_role": current_user.role,
     })
 
 @router.post("/update-profile")

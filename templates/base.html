@@ -47,8 +47,8 @@
                             <i class="bi bi-gear"></i>تنظیمات
                         </a>
                     </li>
-                    {% if user_role in ["admin", "manager", "team_lead", "supervisor"] %}
-                        <li class="nav-item">
+                    {% if user_role.lower() in ["admin", "manager", "team_lead", "supervisor"] %}
+                    <li class="nav-item">
                             <a class="nav-link" href="/all-leave-requests-page">
                                 <i class="bi bi-list-ul"></i> همه‌ی درخواست‌ها
                             </a>
@@ -88,8 +88,8 @@
                     <i class="bi bi-gear"></i> تنظیمات
                 </a>
             </li>
-            {% if user_role in ["admin", "manager", "team_lead", "supervisor"] %}
-                <li class="nav-item">
+            {% if user_role.lower() in ["admin", "manager", "team_lead", "supervisor"] %}
+            <li class="nav-item">
                     <a class="nav-link" href="/all-leave-requests-page">
                         <i class="bi bi-list-ul"></i> همه‌ی درخواست‌ها
                     </a>

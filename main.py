@@ -24,17 +24,17 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # templates = Jinja2Templates(directory="templates")
 
-def fa_role(role):
-    mapping = {
-        "Role.EMPLOYEE": "کارمند",
-        "Role.MANAGER": "مدیر",
-        "Role.SUPERVISOR": "سرپرست",
-        "Role.TEAM_LEAD": "رهبر تیم",
-    }
-    return mapping.get(role, "نامشخص")
+# def fa_role(role):
+#     mapping = {
+#         "Role.EMPLOYEE": "کارمند",
+#         "Role.MANAGER": "مدیر",
+#         "Role.SUPERVISOR": "سرپرست",
+#         "Role.TEAM_LEAD": "رهبر تیم",
+#     }
+#     return mapping.get(role, "نامشخص")
 
-# ثبت فیلتر
-templates.env.filters["fa_role"] = fa_role
+# # ثبت فیلتر
+# templates.env.filters["fa_role"] = fa_role
 
 app.add_middleware(
     CORSMiddleware,
