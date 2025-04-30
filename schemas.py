@@ -47,11 +47,7 @@ class AdminSettingsUpdate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: str | None = None
-    email: str | None = None
-    full_name: str | None = None
-    role: str | None = None
-    is_active: bool | None = None
-    
-    class Config:
-        from_attributes = True
+    username: Optional[str] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None

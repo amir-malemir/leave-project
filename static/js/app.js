@@ -480,6 +480,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     <td>${item.endDate || "-"}</td>
                     <td>${item.status}</td>
                     <td>${item.reason || ""}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-btn" data-id="${item.id}">ویرایش</button>
+                    </td>
                 `;
                 table.appendChild(row);
             });

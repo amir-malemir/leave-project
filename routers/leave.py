@@ -9,10 +9,10 @@ from dependencies import get_db
 from models import LeaveRequest, User
 from .auth import get_current_user
 import jdatetime
-from schemas import LeaveRequestOut
+from schemas import LeaveRequestOut, UserUpdate
 
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter()
 
 # templates = Jinja2Templates(directory="templates")
 
@@ -23,6 +23,10 @@ class LeaveRequestCreate(BaseModel):
     start_date: date
     end_date: date
     reason: str = None
+
+class LeaveUpdate(BaseModel):
+    status: str
+    reason: Optional[str] = None
 
 # leave request
 @router.get("/create-leave-request", response_class=HTMLResponse)
@@ -186,41 +190,60 @@ def get_all_leave_requests(request: Request, db: Session = Depends(get_db), curr
     
     return result
 
-@router.put("/{user_id}")
-def update_user(
-    user_id: int,
-    user_data: UserUpdate,
+# صفحه ویرایش کاربر (فرانت)
+@router.get("/edit-leave-request/{request_id}", response_class=HTMLResponse)
+def edit_leave_page(
+    request_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # 1. بررسی آیا کاربر جاری ادمین است
-    if current_user.role.lower() != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="فقط ادمین‌ها می‌توانند کاربران را ویرایش کنند"
-        )
+    # بررسی دسترسی
+    if current_user.role.lower() not in AUTHORIZED_ROLES:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    # 2. پیدا کردن کاربر هدف
-    db_user = db.query(User).filter(User.id == user_id).first()
-    if not db_user:
-        raise HTTPException(status_code=404, detail="کاربر پیدا نشد")
+    # دریافت درخواست از دیتابیس
+    leave_request = db.query(LeaveRequest).filter(
+        LeaveRequest.id == request_id
+    ).first()
     
-    # 3. آپدیت فیلدها
-    update_data = user_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_user, field, value)
+    if not leave_request:
+        raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
+    
+    return templates.TemplateResponse(
+        "edit_leave.html",
+        {
+            "request": request,
+            "leave": leave_request,
+            "user_role": current_user.role
+        }
+    )
+
+# API ویرایش کاربر (بک‌اند)
+@router.put("/api/update-leave/{request_id}")
+def update_leave(
+    request_id: int,
+    update_data: LeaveUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # بررسی دسترسی
+    if current_user.role.lower() not in AUTHORIZED_ROLES:
+        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    
+    # پیدا کردن درخواست
+    leave = db.query(LeaveRequest).filter(
+        LeaveRequest.id == request_id
+    ).first()
+    
+    if not leave:
+        raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
+    
+    # اعمال تغییرات
+    leave.status = update_data.status
+    leave.reason = update_data.reason
+    leave.updated_at = datetime.utcnow()
     
     db.commit()
-    db.refresh(db_user)
     
-    return db_user
-
-@router.patch("/{user_id}")
-def partial_update_user(
-    user_id: int,
-    user_data: UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    # مشابه PUT اما برای آپدیت جزئی
-    return update_user(user_id, user_data, db, current_user)
+    return {"message": "درخواست با موفقیت به‌روز شد"}

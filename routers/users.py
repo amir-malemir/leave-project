@@ -179,7 +179,8 @@ def edit_user_page(user_id: int, request: Request, db: Session = Depends(get_db)
     
     return templates.TemplateResponse("edit_user.html", {
         "request": request,
-        "user_to_edit": user
+        "user_to_edit": user,
+        "user_role": current_user.role,
     })
 
 @router.post("/edit-user/{user_id}")

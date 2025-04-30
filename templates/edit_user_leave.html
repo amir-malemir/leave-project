@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>ویرایش درخواست مرخصی #{{ leave.id }}</h2>
+    
+    <form id="editLeaveForm">
+        <div class="mb-3">
+            <label class="form-label">وضعیت</label>
+            <select class="form-select" id="status">
+                <option value="pending" {% if leave.status == 'pending' %}selected{% endif %}>در انتظار</option>
+                <option value="approved" {% if leave.status == 'approved' %}selected{% endif %}>تایید شده</option>
+                <option value="rejected" {% if leave.status == 'rejected' %}selected{% endif %}>رد شده</option>
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">دلیل</label>
+            <textarea class="form-control" id="reason" rows="3">{{ leave.reason or '' }}</textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('editLeaveForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const response = await fetch(`/api/update-leave/${leave.id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({
+            status: document.getElementById('status').value,
+            reason: document.getElementById('reason').value
+        })
+    });
+    
+    if (response.ok) {
+        alert('تغییرات با موفقیت ذخیره شد!');
+        window.location.href = '/all-leave-requests-page';
+    } else {
+        const error = await response.json();
+        alert('خطا: ' + error.detail);
+    }
+});
+</script>
+{% endblock %}
