@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import Optional, List
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from core.templates import templates
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from dependencies import get_db
 from models import LeaveRequest, User
 from .auth import get_current_user
-import jdatetime
 from schemas import LeaveRequestOut, UserUpdate
+import jdatetime
 
 
 router = APIRouter()
@@ -27,6 +27,17 @@ class LeaveRequestCreate(BaseModel):
 class LeaveUpdate(BaseModel):
     status: str
     reason: Optional[str] = None
+
+def gregorian_to_shamsi(gregorian_date):
+    """تبدیل تاریخ میلادی به شمسی"""
+    if not gregorian_date:
+        return "-"
+    try:
+        jdate = jdatetime.date.fromgregorian(date=gregorian_date)
+        return jdate.strftime("%Y/%m/%d")
+    except Exception as e:
+        print(f"Error converting date: {e}")
+        return str(gregorian_date)  # در صورت خطا تاریخ میلادی را برگردان
 
 # leave request
 @router.get("/create-leave-request", response_class=HTMLResponse)
@@ -156,39 +167,68 @@ def get_user_leave_requests(
             detail="خطا در دریافت لیست درخواست‌های مرخصی"
         )
 # all request 
+# @router.get("/all-leave-requests-page", response_class=HTMLResponse)
+# async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
+#     if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
+#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    
+#     return templates.TemplateResponse("all_leave_requests.html", {"request": request, "user_role": current_user.role})
+
+
+# @router.get("/all-leave-requests")
+# def get_all_leave_requests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+#     print(current_user)
+#     if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
+#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    
+#     leave_requests = db.query(LeaveRequest).options(joinedload(LeaveRequest.user)).all()
+#     result = []
+#     for req in leave_requests:
+#         result.append({
+#             "id": req.id,
+#             "startDate": req.start_date.strftime("%Y-%m-%d"),
+#             "endDate": req.end_date.strftime("%Y-%m-%d"),
+#             "status": req.status,
+#             "reason": req.reason,
+#             "user": {
+#                 "id": req.user.id,
+#                 "username": req.user.username,
+#                 "email": req.user.email,
+#                 "fullName": req.user.full_name,
+#                 "role": req.user.role,
+#             }
+#         })
+    
+#     return result
+
 @router.get("/all-leave-requests-page", response_class=HTMLResponse)
-async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
-    if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
+def all_leave_requests_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    return templates.TemplateResponse("all_leave_requests.html", {"request": request, "user_role": current_user.role})
-
-
-@router.get("/all-leave-requests")
-def get_all_leave_requests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    print(current_user)
-    if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
-        raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
+    leave_requests = db.query(LeaveRequest).options(
+        joinedload(LeaveRequest.user)
+    ).order_by(LeaveRequest.start_date.desc()).all()
     
-    leave_requests = db.query(LeaveRequest).options(joinedload(LeaveRequest.user)).all()
-    result = []
+    # تبدیل تاریخ‌ها
     for req in leave_requests:
-        result.append({
-            "id": req.id,
-            "startDate": req.start_date.strftime("%Y-%m-%d"),
-            "endDate": req.end_date.strftime("%Y-%m-%d"),
-            "status": req.status,
-            "reason": req.reason,
-            "user": {
-                "id": req.user.id,
-                "username": req.user.username,
-                "email": req.user.email,
-                "fullName": req.user.full_name,
-                "role": req.user.role,
-            }
-        })
+        req.start_date_shamsi = gregorian_to_shamsi(req.start_date)
+        req.end_date_shamsi = gregorian_to_shamsi(req.end_date)
     
-    return result
+    return templates.TemplateResponse(
+        "all_leave_requests.html",
+        {
+            "request": request,
+            "leave_requests": leave_requests,
+            "current_user": current_user,
+            "user_role": current_user.role,
+        }
+    )
+
 
 # صفحه ویرایش کاربر (فرانت)
 @router.get("/edit-leave-request/{request_id}", response_class=HTMLResponse)
@@ -198,11 +238,9 @@ def edit_leave_page(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # بررسی دسترسی
     if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    # دریافت درخواست از دیتابیس
     leave_request = db.query(LeaveRequest).filter(
         LeaveRequest.id == request_id
     ).first()
@@ -211,27 +249,27 @@ def edit_leave_page(
         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
     
     return templates.TemplateResponse(
-        "edit_leave.html",
+        "edit_leave.html",  # نام فایل باید دقیقاً مطابق باشد
         {
             "request": request,
             "leave": leave_request,
-            "user_role": current_user.role
+            "current_user": current_user,
+            "user_role": current_user.role,
         }
     )
 
 # API ویرایش کاربر (بک‌اند)
-@router.put("/api/update-leave/{request_id}")
-def update_leave(
+@router.post("/update-leave-request/{request_id}")
+async def update_leave_request(
     request_id: int,
-    update_data: LeaveUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # بررسی دسترسی
     if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    # پیدا کردن درخواست
+    form_data = await request.form()
     leave = db.query(LeaveRequest).filter(
         LeaveRequest.id == request_id
     ).first()
@@ -239,11 +277,25 @@ def update_leave(
     if not leave:
         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
     
+    # اعتبارسنجی وضعیت
+    valid_statuses = ["pending", "approved", "rejected"]
+    if form_data.get("status") not in valid_statuses:
+        raise HTTPException(status_code=400, detail="وضعیت نامعتبر")
+    
     # اعمال تغییرات
-    leave.status = update_data.status
-    leave.reason = update_data.reason
+    leave.status = form_data.get("status")
+    leave.reason = form_data.get("reason")
+    leave.manager_comment = form_data.get("manager_comment")
     leave.updated_at = datetime.utcnow()
+    
+    # اگر وضعیت به تأیید/رد تغییر کرد، مدیر تأییدکننده را ثبت کنید
+    if form_data.get("status") in ["approved", "rejected"]:
+        leave.approved_by = current_user.id
+        leave.approved_at = datetime.utcnow()
     
     db.commit()
     
-    return {"message": "درخواست با موفقیت به‌روز شد"}
+    return RedirectResponse(
+        url="/all-leave-requests-page",
+        status_code=303
+    )

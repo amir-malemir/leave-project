@@ -19,7 +19,31 @@
                                 <th class="text-nowrap">عملیات</th>
                             </tr>
                         </thead>
-                        <tbody id="leave-requests-table">
+                        <tbody>
+                            {% for req in leave_requests %}
+                            <tr>
+                                <td>{{ req.id }}</td>
+                                <td>{{ req.user.username }}</td>
+                                <td>{{ req.start_date_shamsi }}</td>
+                                <td>{{ req.end_date_shamsi }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if req.status == 'approved' %}bg-success
+                                        {% elif req.status == 'rejected' %}bg-danger
+                                        {% else %}bg-warning text-dark{% endif %}">
+                                        {{ req.status }}
+                                    </span>
+                                </td>
+                                <td>{{ req.reason or '-' }}</td>
+                                <td>
+                                    {% if current_user.role in ['admin', 'manager'] %}
+                                    <a href="/edit-leave-request/{{ req.id }}" class="btn btn-sm btn-warning">
+                                        ویرایش
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                         <button id="export-excel-btn" class="btn btn-success">📥 خروجی اکسل</button>
                     </table>
