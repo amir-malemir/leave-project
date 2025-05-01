@@ -166,40 +166,6 @@ def get_user_leave_requests(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="خطا در دریافت لیست درخواست‌های مرخصی"
         )
-# all request 
-# @router.get("/all-leave-requests-page", response_class=HTMLResponse)
-# async def all_leave_requests_page(request: Request, current_user: User = Depends(get_current_user)):
-#     if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
-#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-    
-#     return templates.TemplateResponse("all_leave_requests.html", {"request": request, "user_role": current_user.role})
-
-
-# @router.get("/all-leave-requests")
-# def get_all_leave_requests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-#     print(current_user)
-#     if current_user.role.lower() not in [role.lower() for role in AUTHORIZED_ROLES]:
-#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-    
-#     leave_requests = db.query(LeaveRequest).options(joinedload(LeaveRequest.user)).all()
-#     result = []
-#     for req in leave_requests:
-#         result.append({
-#             "id": req.id,
-#             "startDate": req.start_date.strftime("%Y-%m-%d"),
-#             "endDate": req.end_date.strftime("%Y-%m-%d"),
-#             "status": req.status,
-#             "reason": req.reason,
-#             "user": {
-#                 "id": req.user.id,
-#                 "username": req.user.username,
-#                 "email": req.user.email,
-#                 "fullName": req.user.full_name,
-#                 "role": req.user.role,
-#             }
-#         })
-    
-#     return result
 
 @router.get("/all-leave-requests-page", response_class=HTMLResponse)
 def all_leave_requests_page(
