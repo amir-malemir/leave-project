@@ -112,8 +112,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // مدیریت فرم ثبت‌نام
     const registerForm = document.getElementById("register-form");
     if (registerForm) {
-        // مدیریت تغییر سطح‌ها بر اساس واحد
         const unitSelect = document.getElementById("register-unit");
+        const teamSelect = document.getElementById("register-team");
+        const teamContainer = document.getElementById("register-team").parentElement;
         const levelSelect = document.getElementById("register-level");
 
         const levels = {
@@ -121,21 +122,53 @@ document.addEventListener("DOMContentLoaded", function () {
             noc: ["ECS", "FO"]
         };
 
-        unitSelect.addEventListener("change", function () {
-            const selectedUnit = unitSelect.value;
-            levelSelect.innerHTML = ""; // پاک کردن گزینه‌های قبلی
+        // تابع برای به‌روزرسانی سطح
+        function updateLevelOptions(unit, team) {
+            levelSelect.innerHTML = "";
 
-            levels[selectedUnit]?.forEach(level => {
+            let levelList = levels[unit] || [];
+
+            // اگر تیم تورنادو انتخاب شده، فقط inbound اجازه داده شود
+            if (team === "Tornado") {
+                levelList = ["Inbound"];
+            }
+
+            levelList.forEach(level => {
                 const option = document.createElement("option");
                 option.value = level.toLowerCase();
                 option.textContent = level;
                 levelSelect.appendChild(option);
             });
+        }
+
+        // تغییر واحد → بروزرسانی سطح و پنهان‌کردن/نمایش تیم
+        unitSelect.addEventListener("change", function () {
+            const selectedUnit = unitSelect.value;
+
+            // اگر NOC انتخاب شده، تیم مخفی شود
+            if (selectedUnit === "noc") {
+                teamContainer.style.display = "none";
+                teamSelect.value = "Zitel";
+            } else {
+                teamContainer.style.display = "block";
+            }
+
+            const selectedTeam = teamSelect.value;
+            updateLevelOptions(selectedUnit, selectedTeam);
         });
 
-        // مقدار پیش‌فرض برای سطح‌ها
+        // تغییر تیم → بروزرسانی سطح فقط برای callcenter
+        teamSelect.addEventListener("change", function () {
+            const selectedUnit = unitSelect.value;
+            const selectedTeam = teamSelect.value;
+
+            updateLevelOptions(selectedUnit, selectedTeam);
+        });
+
+        // مقدار پیش‌فرض
         unitSelect.dispatchEvent(new Event("change"));
 
+        // ارسال فرم
         registerForm.addEventListener("submit", async function (e) {
             e.preventDefault();
             console.log("فرم ثبت‌نام ارسال شد!");
@@ -144,15 +177,16 @@ document.addEventListener("DOMContentLoaded", function () {
             const email = document.getElementById("register-email").value;
             const fullName = document.getElementById("register-full-name").value;
             const phoneNumber = document.getElementById("register-phone-number").value;
-            const unit = document.getElementById("register-unit").value;
-            const level = document.getElementById("register-level").value;
+            const unit = unitSelect.value;
+            const team = teamSelect.value;
+            const level = levelSelect.value;
             const password = document.getElementById("register-password").value;
             const confirmPassword = document.getElementById("register-confirm-password").value;
 
-            const role = "employee"; // مقدار پیش‌فرض برای role
+            const role = "employee";
 
             if (password !== confirmPassword) {
-                showAlert("رمز عبور و تأیید آن مطابقت ندارند!", "danger"); // پیام هشدار
+                showAlert("رمز عبور و تأیید آن مطابقت ندارند!", "danger");
                 return;
             }
 
@@ -168,6 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         full_name: fullName,
                         phone_number: phoneNumber,
                         unit,
+                        team,
                         level,
                         role,
                         password
@@ -175,19 +210,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
 
                 if (response.ok) {
-                    showAlert("ثبت‌نام موفقیت‌آمیز بود!", "success"); // پیام موفقیت
+                    showAlert("ثبت‌نام موفقیت‌آمیز بود!", "success");
                     window.location.href = "/login";
                 } else {
                     const errorData = await response.json();
                     console.error("خطای ثبت‌نام:", errorData.detail);
-                    showAlert(errorData.detail || "ثبت‌نام ناموفق بود!", "danger"); // پیام خطا
+                    showAlert(errorData.detail || "ثبت‌نام ناموفق بود!", "danger");
                 }
             } catch (error) {
                 console.error("خطای درخواست:", error);
-                showAlert("خطایی رخ داد!", "danger"); // پیام خطای عمومی
+                showAlert("خطایی رخ داد!", "danger");
             }
         });
     }
+
     // دریافت اطلاعات داشبورد
     async function loadDashboardData() {
         console.log("در حال بارگذاری اطلاعات داشبورد...");
@@ -280,36 +316,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // فراخوانی تابع هنگام بارگذاری صفحه
     document.addEventListener("DOMContentLoaded", loadUserLeaveRequests);
-
-    // // دریافت لیست کاربران
-    // async function loadUsers() {
-    //     console.log("در حال بارگذاری لیست کاربران...");
-    //     try {
-    //         const token = localStorage.getItem("token");
-    //         if (!token) {
-    //             console.error("توکن یافت نشد!");
-    //             window.location.href = "/login";
-    //             return;
-    //         }
-
-    //         const response = await fetch("/user-management", {
-    //             method: "GET",
-    //             headers: {
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
-
-    //         if (response.ok) {
-    //             const users = await response.json();
-    //             console.log("لیست کاربران دریافت شد:", users);
-    //             renderUsers(users);
-    //         } else {
-    //             console.error("خطا در دریافت لیست کاربران!");
-    //         }
-    //     } catch (error) {
-    //         console.error("خطا در دریافت لیست کاربران:", error);
-    //     }
-    // }
 
     // نمایش لیست کاربران
     function renderUsers(users) {

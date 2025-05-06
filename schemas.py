@@ -2,6 +2,15 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date, datetime
 
+
+
+class TeamBase(BaseModel):
+    id: int
+    name: str
+    is_vendor: bool
+
+    class Config:
+        orm_mode = True
 # اسکیمای خروجی برای اطلاعات کاربر
 class UserOut(BaseModel):
     id: int
@@ -12,6 +21,7 @@ class UserOut(BaseModel):
     unit: str
     level: str
     role: str
+    team: Optional[TeamBase] = None
 
     class Config:
         from_attributes = True

@@ -28,6 +28,7 @@ class UserCreate(BaseModel):
     level: str
     role: Optional[str] = "employee"
     password: str
+    team: Optional[str] = None
     
 # مدل پایتون برای دریافت اطلاعات لاگین
 class UserLogin(BaseModel):
@@ -78,7 +79,8 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
             unit=user_data.unit,
             level=user_data.level,
             role=user_data.role.lower(),
-            hashed_password=hashed_password
+            hashed_password=hashed_password,
+            team=user_data.team
         )
         db.add(new_user)
         db.commit()

@@ -36,10 +36,11 @@
                                 </td>
                                 <td>{{ req.reason or '-' }}</td>
                                 <td>
-                                    {% if current_user.role in ['admin', 'manager'] %}
-                                    <a href="/edit-leave-request/{{ req.id }}" class="btn btn-sm btn-warning">
-                                        ویرایش
-                                    </a>
+                                    {% if current_user.role == 'admin' or current_user.role == 'supervisor' or
+                                        (current_user.role == 'team_lead' and current_user.team == req.user.team) %}
+                                        <a href="/edit-leave-request/{{ req.id }}" class="btn btn-sm btn-warning">
+                                            ویرایش
+                                        </a>
                                     {% endif %}
                                 </td>
                             </tr>

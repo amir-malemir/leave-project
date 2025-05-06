@@ -12,7 +12,7 @@ def fa_role(role):
         Role.EMPLOYEE:   "کارمند",
         Role.MANAGER:    "مدیر",
         Role.SUPERVISOR: "سرپرست",
-        Role.TEAM_LEAD:  "رهبر تیم",
+        Role.TEAM_LEAD:  "تیم لید",
         Role.SUPERADMIN: "مدیر ارشد",
     }
     return mapping.get(role, "نامشخص")

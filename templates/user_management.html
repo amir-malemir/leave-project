@@ -16,6 +16,7 @@
                             <th>نام کاربری</th>
                             <th>ایمیل</th>
                             <th>واحد</th>
+                            <th>تیم</th>
                             <th>نقش (اصلی)</th>
                             <th>عملیات</th>
                         </tr>
@@ -27,6 +28,7 @@
                             <td>{{ user.username or "نامشخص" }}</td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.unit }}</td>
+                            <td>{{ user.team }}</td>
                             <td>{{ user.role | fa_role }}</td>
                             <td>
                                 <div class="d-flex justify-content-center align-items-center gap-2">

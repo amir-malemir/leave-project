@@ -16,7 +16,7 @@ router = APIRouter()
 
 # templates = Jinja2Templates(directory="templates")
 
-AUTHORIZED_ROLES = ["admin", "manager", "team_lead", "supervisor"]
+AUTHORIZED_ROLES = ["admin", "manager", "supervisor", "team_lead"]
 
 # مدل پایتون جهت ثبت درخواست مرخصی
 class LeaveRequestCreate(BaseModel):
@@ -137,11 +137,8 @@ def show_user_leave_requests_page(request: Request, current_user: User = Depends
 @router.get("/user-leave-requests", tags=["leave"])
 def get_user_leave_requests(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # احراز هویت کاربر
+    current_user: User = Depends(get_current_user)
 ):
-    """
-    دریافت لیست درخواست‌های مرخصی کاربر فعلی
-    """
     try:
         leave_requests = db.query(LeaveRequest).filter(
             LeaveRequest.user_id == current_user.id
@@ -152,7 +149,7 @@ def get_user_leave_requests(
         for request in leave_requests:
             leave_requests_shamsi.append({
                 "id": request.id,
-                "username": current_user.username,  # این خط اضافه بشه
+                "username": current_user.username,
                 "start_date": jdatetime.date.fromgregorian(date=request.start_date).strftime("%Y/%m/%d"),
                 "end_date": jdatetime.date.fromgregorian(date=request.end_date).strftime("%Y/%m/%d"),
                 "reason": request.reason,
@@ -176,9 +173,23 @@ def all_leave_requests_page(
     if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    leave_requests = db.query(LeaveRequest).options(
-        joinedload(LeaveRequest.user)
-    ).order_by(LeaveRequest.start_date.desc()).all()
+    if current_user.role == "team_lead":
+        if current_user.team == "Tornado":
+            leave_requests = (
+                db.query(LeaveRequest)
+                .join(User, LeaveRequest.user_id == User.id)
+                .filter(User.team == "Tornado")
+                .options(joinedload(LeaveRequest.user))
+                .order_by(LeaveRequest.start_date.desc())
+                .all()
+            )
+    else:
+        leave_requests = (
+            db.query(LeaveRequest)
+            .options(joinedload(LeaveRequest.user))
+            .order_by(LeaveRequest.start_date.desc())
+            .all()
+        )
     
     # تبدیل تاریخ‌ها
     for req in leave_requests:
@@ -195,8 +206,6 @@ def all_leave_requests_page(
         }
     )
 
-
-# صفحه ویرایش کاربر (فرانت)
 @router.get("/edit-leave-request/{request_id}", response_class=HTMLResponse)
 def edit_leave_page(
     request_id: int,
@@ -215,7 +224,7 @@ def edit_leave_page(
         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
     
     return templates.TemplateResponse(
-        "edit_leave.html",  # نام فایل باید دقیقاً مطابق باشد
+        "edit_leave.html",
         {
             "request": request,
             "leave": leave_request,
@@ -224,7 +233,6 @@ def edit_leave_page(
         }
     )
 
-# API ویرایش کاربر (بک‌اند)
 @router.post("/update-leave-request/{request_id}")
 async def update_leave_request(
     request_id: int,
