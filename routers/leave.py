@@ -173,17 +173,17 @@ def all_leave_requests_page(
     if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    if current_user.role == "team_lead":
-        if current_user.team == "Tornado":
-            leave_requests = (
-                db.query(LeaveRequest)
-                .join(User, LeaveRequest.user_id == User.id)
-                .filter(User.team == "Tornado")
-                .options(joinedload(LeaveRequest.user))
-                .order_by(LeaveRequest.start_date.desc())
-                .all()
-            )
+    if current_user.role == "team_lead" and current_user.team == "Tornado":
+        leave_requests = (
+            db.query(LeaveRequest)
+            .join(User, LeaveRequest.user_id == User.id)
+            .filter(User.team == "Tornado")
+            .options(joinedload(LeaveRequest.user))
+            .order_by(LeaveRequest.start_date.desc())
+            .all()
+        )
     else:
+        # سایر نقش‌ها (از جمله تیم لید غیر توراندو) همه درخواست‌ها رو ببینن
         leave_requests = (
             db.query(LeaveRequest)
             .options(joinedload(LeaveRequest.user))
@@ -251,10 +251,27 @@ async def update_leave_request(
     if not leave:
         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
     
-    # اعتبارسنجی وضعیت
-    valid_statuses = ["pending", "approved", "rejected"]
-    if form_data.get("status") not in valid_statuses:
-        raise HTTPException(status_code=400, detail="وضعیت نامعتبر")
+    # بررسی تیم
+    target_user = db.query(User).filter(User.id == leave.user_id).first()
+    is_tornado = target_user.team == "Tornado"
+    
+    if is_tornado:
+        if current_user.team == "Tornado":
+            leave.tornado_approval = True
+        elif current_user.team != "Tornado":
+            leave.zitel_approval = True
+
+        if leave.tornado_approval and leave.zitel_approval:
+                    leave.status = "approved"
+                    leave.approved_by = current_user.id
+        elif leave.tornado_approval and not leave.zitel_approval:
+            leave.status = "pending_zitel"
+        else:
+            leave.status = "pending"
+    else:
+        valid_statuses = ["pending", "approved", "rejected"]
+        if form_data.get("status") not in valid_statuses:
+            raise HTTPException(status_code=400, detail="وضعیت نامعتبر")
     
     # اعمال تغییرات
     leave.status = form_data.get("status")

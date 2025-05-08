@@ -31,13 +31,16 @@
                                         {% if req.status == 'approved' %}bg-success
                                         {% elif req.status == 'rejected' %}bg-danger
                                         {% else %}bg-warning text-dark{% endif %}">
-                                        {{ req.status }}
+                                        {{ req.status | fa_status(req.user.team, req.tornado_approval, req.zitel_approval) }}
                                     </span>
                                 </td>
                                 <td>{{ req.reason or '-' }}</td>
                                 <td>
-                                    {% if current_user.role == 'admin' or current_user.role == 'supervisor' or
-                                        (current_user.role == 'team_lead' and current_user.team == req.user.team) %}
+                                    {% if current_user.role in ['admin', 'supervisor', 'manager'] or
+                                        (current_user.role == 'team_lead' and (
+                                            current_user.team == req.user.team or
+                                            (req.user.team == 'Tornado' and current_user.team == 'Zitel')
+                                        )) %}
                                         <a href="/edit-leave-request/{{ req.id }}" class="btn btn-sm btn-warning">
                                             ویرایش
                                         </a>
