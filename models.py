@@ -39,6 +39,7 @@ class LeaveRequest(Base):
     reason = Column(String, nullable=True)
     status = Column(String, default="pending")
     level = Column(String)
+    team = Column(String, nullable=True)
     tornado_approval = Column(Boolean, default=None)
     zitel_approval = Column(Boolean, default=None)
     approved_by = Column(Integer, ForeignKey('users.id'))

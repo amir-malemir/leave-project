@@ -11,7 +11,7 @@
                         <thead class="table-dark">
                             <tr>
                                 <th class="text-nowrap">شناسه</th>
-                                <th class="text-nowrap">نام کاربری</th>
+                                <th class="text-nowrap">درخواست دهنده</th>
                                 <th class="text-nowrap">شروع</th>
                                 <th class="text-nowrap">پایان</th>
                                 <th class="text-nowrap">وضعیت</th>
@@ -23,7 +23,7 @@
                             {% for req in leave_requests %}
                             <tr>
                                 <td>{{ req.id }}</td>
-                                <td>{{ req.user.username }}</td>
+                                <td>{{ req.user.full_name }}</td>
                                 <td>{{ req.start_date_shamsi }}</td>
                                 <td>{{ req.end_date_shamsi }}</td>
                                 <td>

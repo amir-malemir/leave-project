@@ -90,6 +90,7 @@ def create_leave_request(
         # بررسی وجود درخواست مرخصی در سطح کاربر فعلی
         existing_level_request = db.query(LeaveRequest).filter(
             LeaveRequest.level == current_user.level,
+            LeaveRequest.team == current_user.team,
             LeaveRequest.start_date <= end_date_gregorian,
             LeaveRequest.end_date >= start_date_gregorian
         ).first()
@@ -107,7 +108,8 @@ def create_leave_request(
             end_date=end_date_gregorian,
             reason=leave_data.reason,
             status="pending", 
-            level=current_user.level
+            level=current_user.level,
+            team=current_user.team
         )
 
         db.add(new_leave)
