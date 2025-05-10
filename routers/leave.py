@@ -244,50 +244,51 @@ async def update_leave_request(
 ):
     if current_user.role.lower() not in AUTHORIZED_ROLES:
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-    
+
     form_data = await request.form()
-    leave = db.query(LeaveRequest).filter(
-        LeaveRequest.id == request_id
-    ).first()
-    
+    leave = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
+
     if not leave:
         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
-    
-    # بررسی تیم
+
     target_user = db.query(User).filter(User.id == leave.user_id).first()
-    is_tornado = target_user.team == "Tornado"
-    
-    if is_tornado:
-        if current_user.team == "Tornado":
+    requesting_team = target_user.team
+    current_team = current_user.team
+
+    # حالت اول: درخواست‌دهنده از تیم Tornado
+    if requesting_team == "Tornado":
+        if current_team == "Tornado":
             leave.tornado_approval = True
-        elif current_user.team != "Tornado":
+            leave.status = "pending_zitel"
+        elif current_team == "Zitel":
             leave.zitel_approval = True
 
+        # اگر هر دو تأیید کردند
         if leave.tornado_approval and leave.zitel_approval:
-                    leave.status = "approved"
-                    leave.approved_by = current_user.id
-        elif leave.tornado_approval and not leave.zitel_approval:
-            leave.status = "pending_zitel"
-        else:
-            leave.status = "pending"
+            leave.status = "approved"
+            leave.approved_by = current_user.id
+            leave.approved_at = datetime.utcnow()
+
+    # حالت دوم: درخواست‌دهنده از تیم Zitel
+    elif requesting_team == "Zitel":
+        leave.tornado_approval = False  # مشخصه که نیازی به تایید تورنادو نداره
+        if current_team == "Zitel":
+            leave.zitel_approval = True
+            leave.status = "approved"
+            leave.approved_by = current_user.id
+            leave.approved_at = datetime.utcnow()
+
     else:
-        valid_statuses = ["pending", "approved", "rejected"]
-        if form_data.get("status") not in valid_statuses:
-            raise HTTPException(status_code=400, detail="وضعیت نامعتبر")
-    
-    # اعمال تغییرات
-    leave.status = form_data.get("status")
+        # در صورت تیم ناشناس
+        raise HTTPException(status_code=400, detail="تیم نامعتبر")
+
+    # به‌روزرسانی مقادیر دیگر
     leave.reason = form_data.get("reason")
     leave.manager_comment = form_data.get("manager_comment")
     leave.updated_at = datetime.utcnow()
-    
-    # اگر وضعیت به تأیید/رد تغییر کرد، مدیر تأییدکننده را ثبت کنید
-    if form_data.get("status") in ["approved", "rejected"]:
-        leave.approved_by = current_user.id
-        leave.approved_at = datetime.utcnow()
-    
+
     db.commit()
-    
+
     return RedirectResponse(
         url="/all-leave-requests-page",
         status_code=303

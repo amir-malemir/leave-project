@@ -34,24 +34,39 @@ templates.env.filters["jdate"] = jalali_filter
 def fa_status(status, team=None, tornado_approval=False, zitel_approval=False):
     """
     این تابع وضعیت درخواست مرخصی را به فارسی ترجمه می‌کند.
-    اگر وضعیت 'approved' باشد، بررسی می‌کند که هر دو تیم تایید کرده‌اند.
+    اگر وضعیت 'approved' باشد، بررسی می‌کند که تأییدات لازم انجام شده‌اند.
     """
     if status == 'pending_zitel':
         return "در انتظار تأیید تیم لید Zitel"
+    
     elif status == 'pending':
         if team == 'Tornado':
             return "در انتظار تأیید تیم لید Tornado"
         else:
             return "در انتظار تأیید تیم لید"
+    
     elif status == 'approved':
-        if tornado_approval and zitel_approval:
-            return "تأیید شده"
+        if team == "Tornado":
+            if tornado_approval and zitel_approval:
+                return "تأیید شده"
+            elif tornado_approval and not zitel_approval:
+                return "در انتظار تأیید تیم لید Zitel"
+            else:
+                return "در انتظار تأیید تیم لید Tornado"
+        elif team == "Zitel":
+            if zitel_approval:
+                return "تأیید شده"
+            else:
+                return "در انتظار تأیید تیم لید Zitel"
         else:
-            return "در انتظار تایید تیم لید Zitel"
+            return "تأیید شده"  # برای سایر تیم‌ها
+    
     elif status == 'rejected':
         return "رد شده"
+    
     else:
         return "وضعیت نامشخص"
+
     
 templates.env.filters["fa_status"] = fa_status
     
