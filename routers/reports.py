@@ -1,19 +1,24 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
+from sqlalchemy.orm import Session, joinedload
 from dependencies import get_db
 from schemas import LeaveRequestOut
 from datetime import date, datetime
 from io import BytesIO
 from openpyxl import Workbook
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 from models import LeaveRequest, User
 from typing import Optional
+from .auth import get_current_user
+from core.templates import templates
 
+router = APIRouter()
 
 router = APIRouter(
     prefix="/reports",
     tags=["Reports"]
 )
+
+authorized_dashboard_roles = ["admin", "supervisor", "team_lead"]
 
 @router.get("/report/")
 def get_leave_report(
@@ -99,3 +104,32 @@ def export_leave_requests_excel(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/dashboard-report", response_class=HTMLResponse)
+def dashboard_report(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in authorized_dashboard_roles:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    today = date.today()
+
+    leave_today = (
+        db.query(LeaveRequest)
+        .join(User)
+        .filter(
+            LeaveRequest.start_date <= today,
+            LeaveRequest.end_date >= today,
+            LeaveRequest.status == "approved"
+        )
+        .options(joinedload(LeaveRequest.user))
+        .all()
+    )
+
+    return templates.TemplateResponse("dashboard_report.html", {
+        "request": request,
+        "leave_today": leave_today,
+        "current_user": current_user
+    })

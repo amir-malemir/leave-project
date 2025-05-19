@@ -224,45 +224,45 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // دریافت اطلاعات داشبورد
-    async function loadDashboardData() {
-        console.log("در حال بارگذاری اطلاعات داشبورد...");
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.error("توکن یافت نشد!");
-                showAlert("لطفاً وارد شوید!", "warning");
-                window.location.href = "/login";
-                return;
-            }
+    // // دریافت اطلاعات داشبورد
+    // async function loadDashboardData() {
+    //     console.log("در حال بارگذاری اطلاعات داشبورد...");
+    //     try {
+    //         const token = localStorage.getItem("token");
+    //         if (!token) {
+    //             console.error("توکن یافت نشد!");
+    //             showAlert("لطفاً وارد شوید!", "warning");
+    //             window.location.href = "/login";
+    //             return;
+    //         }
 
-            const response = await fetch("/dashboard-data", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+    //         const response = await fetch("/dashboard-data", {
+    //             method: "GET",
+    //             headers: {
+    //                 "Authorization": `Bearer ${token}`
+    //             }
+    //         });
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log("اطلاعات دریافت شد:", data);
-                document.getElementById("total-requests").textContent = data.total_requests || 0;
-                document.getElementById("approved-requests").textContent = data.approved_requests || 0;
-                document.getElementById("rejected-requests").textContent = data.rejected_requests || 0;
-                document.getElementById("pending-requests").textContent = data.pending_requests || 0;
-            } else if (response.status === 401) {
-                console.error("توکن نامعتبر است یا منقضی شده!");
-                showAlert("توکن نامعتبر است یا منقضی شده!", "danger");
-                window.location.href = "/login";
-            }
-        } catch (error) {
-            console.error("خطا در دریافت اطلاعات داشبورد:", error);
-            showAlert("خطا در دریافت اطلاعات داشبورد!", "danger");
-        }
-    }
-    if (window.location.pathname === "/leave-requests-page") {
-        loadUserLeaveRequests();
-    }
+    //         if (response.ok) {
+    //             const data = await response.json();
+    //             console.log("اطلاعات دریافت شد:", data);
+    //             document.getElementById("total-requests").textContent = data.total_requests || 0;
+    //             document.getElementById("approved-requests").textContent = data.approved_requests || 0;
+    //             document.getElementById("rejected-requests").textContent = data.rejected_requests || 0;
+    //             document.getElementById("pending-requests").textContent = data.pending_requests || 0;
+    //         } else if (response.status === 401) {
+    //             console.error("توکن نامعتبر است یا منقضی شده!");
+    //             showAlert("توکن نامعتبر است یا منقضی شده!", "danger");
+    //             window.location.href = "/login";
+    //         }
+    //     } catch (error) {
+    //         console.error("خطا در دریافت اطلاعات داشبورد:", error);
+    //         showAlert("خطا در دریافت اطلاعات داشبورد!", "danger");
+    //     }
+    // }
+    // if (window.location.pathname === "/leave-requests-page") {
+    //     loadUserLeaveRequests();
+    // }
 
     // دریافت لیست درخواست‌های مرخصی از سرور
     async function loadUserLeaveRequests() {

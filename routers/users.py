@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel, EmailStr
 from dependencies import get_db
 from models import User, LeaveRequest
@@ -11,12 +11,12 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from core.templates import templates
 from starlette.requests import Request
 from schemas import UserOut, RoleUpdate
-
+from datetime import date
+import jdatetime
 
 router = APIRouter()
 
-
-# templates = Jinja2Templates(directory="templates")
+AUTHORIZED_ROLES = ["admin", "manager", "supervisor", "team_lead"]
 
 # مدل پایتون برای دریافت اطلاعات کاربر جهت ثبت در دیتابیس
 class UserCreate(BaseModel):
@@ -94,19 +94,13 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
 @router.get("/dashboard", response_class=HTMLResponse, tags=["dashboard"])
-def dashboard_page(request: Request, current_user: User = Depends(get_current_user)):
-    
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user_role": current_user.role})
-
-
-@router.get("/dashboard-data", tags=["dashboard"])
-def get_dashboard_data(
+def dashboard_page(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    دریافت اطلاعات داشبورد برای کاربر جاری.
-    """
+    today = date.today()
+
     total_requests = db.query(LeaveRequest).filter(LeaveRequest.user_id == current_user.id).count()
     approved_requests = db.query(LeaveRequest).filter(
         LeaveRequest.user_id == current_user.id,
@@ -118,15 +112,32 @@ def get_dashboard_data(
     ).count()
     pending_requests = db.query(LeaveRequest).filter(
         LeaveRequest.user_id == current_user.id,
-        LeaveRequest.status == "pending"
+        LeaveRequest.status.in_(["pending", "pending_zitel"])
     ).count()
 
-    return {
+    leave_today = []
+    if current_user.role in ["admin", "manager", "supervisor", "team_lead"]:
+        leave_today = (
+            db.query(LeaveRequest)
+            .join(User, LeaveRequest.user_id == User.id)  # ✅ این خط
+            .filter(
+                LeaveRequest.start_date <= today,
+                LeaveRequest.end_date >= today,
+                LeaveRequest.status == "approved"
+            )
+            .options(joinedload(LeaveRequest.user))
+            .all()
+        )
+
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "user_role": current_user.role,
         "total_requests": total_requests,
         "approved_requests": approved_requests,
         "rejected_requests": rejected_requests,
-        "pending_requests": pending_requests
-    }
+        "pending_requests": pending_requests,
+        "leave_today": leave_today
+    })
 
 # مسیر صفحه لاگین
 @router.get("/login", response_class=HTMLResponse, tags=["users"])

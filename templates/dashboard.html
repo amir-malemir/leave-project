@@ -10,8 +10,8 @@
             <div class="card text-center bg-primary text-white shadow card-hover">
                 <div class="card-body">
                     <i class="bi bi-clipboard-check fs-1 mb-3"></i>
-                    <h5 class="card-title">تعداد کل درخواست‌ها</h5>
-                    <p class="card-text fs-4" id="total-requests">0</p>
+                    <h5 class="card-title">کل درخواست‌ها</h5>
+                    <p class="card-text fs-4">{{ total_requests }}</p>
                 </div>
             </div>
         </div>
@@ -20,7 +20,7 @@
                 <div class="card-body">
                     <i class="bi bi-hourglass-split fs-1 mb-3"></i>
                     <h5 class="card-title">در انتظار بررسی</h5>
-                    <p class="card-text fs-4" id="pending-requests">0</p>
+                    <p class="card-text fs-4">{{ pending_requests }}</p>
                 </div>
             </div>
         </div>
@@ -29,7 +29,7 @@
                 <div class="card-body">
                     <i class="bi bi-check-circle fs-1 mb-3"></i>
                     <h5 class="card-title">تأیید شده</h5>
-                    <p class="card-text fs-4" id="approved-requests">0</p>
+                    <p class="card-text fs-4">{{ approved_requests }}</p>
                 </div>
             </div>
         </div>
@@ -38,10 +38,48 @@
                 <div class="card-body">
                     <i class="bi bi-x-circle fs-1 mb-3"></i>
                     <h5 class="card-title">رد شده</h5>
-                    <p class="card-text fs-4" id="rejected-requests">0</p>
+                    <p class="card-text fs-4">{{ rejected_requests }}</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% if user_role in ["admin", "manager", "supervisor", "team_lead"] %}
+<hr class="my-5">
+<div class="content">
+    <h2 class="text-center my-3">افراد در مرخصی امروز</h2>
+    {% if leave_today %}
+        <div class="table-responsive table-container overflow-auto">
+            <table class="table table-striped table-hover align-middle text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>نام کاربری</th>
+                        <th>نام کامل</th>
+                        <th>تیم</th>
+                        <th>واحد</th>
+                        <th>تاریخ شروع</th>
+                        <th>تاریخ پایان</th>
+                        <th>دلیل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leave_today %}
+                    <tr>
+                        <td>{{ leave.user.username }}</td>
+                        <td>{{ leave.user.full_name }}</td>
+                        <td>{{ leave.user.team or '-' }}</td>
+                        <td>{{ leave.user.unit or '-' }}</td>
+                        <td>{{ leave.start_date | jdate }}</td>
+                        <td>{{ leave.end_date | jdate }}</td>
+                        <td>{{ leave.reason or "-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-center text-muted">امروز کسی در مرخصی نیست.</p>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}
