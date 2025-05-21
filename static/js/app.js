@@ -69,201 +69,115 @@ document.addEventListener("DOMContentLoaded", function () {
     // مدیریت فرم لاگین
 
 
-    const loginForm = document.getElementById("login-form");
-    if (loginForm) {
-        loginForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
+    // const loginForm = document.getElementById("login-form");
+    // if (loginForm) {
+    //     loginForm.addEventListener("submit", async function (e) {
+    //         e.preventDefault();
 
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
+    //         const username = document.getElementById("username").value;
+    //         const password = document.getElementById("password").value;
 
-            try {
-                const response = await fetch("/token", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    body: new URLSearchParams({
-                        username: username,
-                        password: password
-                    })
-                });
+    //         try {
+    //             const response = await fetch("/token", {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/x-www-form-urlencoded"
+    //                 },
+    //                 body: new URLSearchParams({
+    //                     username: username,
+    //                     password: password
+    //                 })
+    //             });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("توکن دریافت شد:", data.access_token);
+    //             if (response.ok) {
+    //                 const data = await response.json();
+    //                 console.log("توکن دریافت شد:", data.access_token);
 
-                    // ذخیره توکن در localStorage
-                    localStorage.setItem("token", data.access_token);
+    //                 // ذخیره توکن در localStorage
+    //                 localStorage.setItem("token", data.access_token);
 
-                    // هدایت به صفحه داشبورد
-                    window.location.href = "/dashboard";
-                } else {
-                    const errorData = await response.json();
-                    showAlert("نام کاربری یا رمز عبور اشتباه است!", "danger");
-                }
-            } catch (error) {
-                console.error("خطا در ارسال درخواست ورود:", error);
-                alert("خطایی رخ داد!");
-            }
-        });
-        }
+    //                 // هدایت به صفحه داشبورد
+    //                 window.location.href = "/dashboard";
+    //             } else {
+    //                 const errorData = await response.json();
+    //                 showAlert("نام کاربری یا رمز عبور اشتباه است!", "danger");
+    //             }
+    //         } catch (error) {
+    //             console.error("خطا در ارسال درخواست ورود:", error);
+    //             alert("خطایی رخ داد!");
+    //         }
+    //     });
+    //     }
 
     // مدیریت فرم ثبت‌نام
-    const registerForm = document.getElementById("register-form");
-    if (registerForm) {
-        const unitSelect = document.getElementById("register-unit");
-        const teamSelect = document.getElementById("register-team");
-        const teamContainer = document.getElementById("register-team").parentElement;
-        const levelSelect = document.getElementById("register-level");
+    const unitSelect = document.getElementById("register-unit");
+    const teamSelect = document.getElementById("register-team");
+    const teamContainer = teamSelect?.parentElement;
+    const levelSelect = document.getElementById("register-level");
 
-        const levels = {
-            callcenter: ["Inbound", "Outbound", "AHD"],
-            noc: ["ECS", "FO"]
-        };
+    if (!unitSelect || !teamSelect || !levelSelect) return;
 
-        // تابع برای به‌روزرسانی سطح
-        function updateLevelOptions(unit, team) {
-            levelSelect.innerHTML = "";
-
-            let levelList = levels[unit] || [];
-
-            // اگر تیم تورنادو انتخاب شده، فقط inbound اجازه داده شود
-            if (team === "Tornado") {
-                levelList = ["Inbound"];
-            }
-
-            levelList.forEach(level => {
-                const option = document.createElement("option");
-                option.value = level.toLowerCase();
-                option.textContent = level;
-                levelSelect.appendChild(option);
-            });
+    const levelOptions = {
+        callcenter: {
+            Zitel: ["inbound", "outbound", "ahd"],
+            Tornado: ["inbound"]
+        },
+        noc: {
+            Zitel: ["ecs", "fo", "ops"]
         }
+    };
 
-        // تغییر واحد → بروزرسانی سطح و پنهان‌کردن/نمایش تیم
-        unitSelect.addEventListener("change", function () {
-            const selectedUnit = unitSelect.value;
+    function updateLevels() {
+        const unit = unitSelect.value;
+        const team = teamSelect.value;
+        levelSelect.innerHTML = "";
 
-            // اگر NOC انتخاب شده، تیم مخفی شود
-            if (selectedUnit === "noc") {
-                teamContainer.style.display = "none";
-                teamSelect.value = "Zitel";
-            } else {
-                teamContainer.style.display = "block";
-            }
-
-            const selectedTeam = teamSelect.value;
-            updateLevelOptions(selectedUnit, selectedTeam);
-        });
-
-        // تغییر تیم → بروزرسانی سطح فقط برای callcenter
-        teamSelect.addEventListener("change", function () {
-            const selectedUnit = unitSelect.value;
-            const selectedTeam = teamSelect.value;
-
-            updateLevelOptions(selectedUnit, selectedTeam);
-        });
-
-        // مقدار پیش‌فرض
-        unitSelect.dispatchEvent(new Event("change"));
-
-        // ارسال فرم
-        registerForm.addEventListener("submit", async function (e) {
-            e.preventDefault();
-            console.log("فرم ثبت‌نام ارسال شد!");
-
-            const username = document.getElementById("register-username").value;
-            const email = document.getElementById("register-email").value;
-            const fullName = document.getElementById("register-full-name").value;
-            const phoneNumber = document.getElementById("register-phone-number").value;
-            const unit = unitSelect.value;
-            const team = teamSelect.value;
-            const level = levelSelect.value;
-            const password = document.getElementById("register-password").value;
-            const confirmPassword = document.getElementById("register-confirm-password").value;
-
-            const role = "employee";
-
-            if (password !== confirmPassword) {
-                showAlert("رمز عبور و تأیید آن مطابقت ندارند!", "danger");
-                return;
-            }
-
-            try {
-                const response = await fetch("http://127.0.0.1:8000/users", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        username,
-                        email,
-                        full_name: fullName,
-                        phone_number: phoneNumber,
-                        unit,
-                        team,
-                        level,
-                        role,
-                        password
-                    })
-                });
-
-                if (response.ok) {
-                    showAlert("ثبت‌نام موفقیت‌آمیز بود!", "success");
-                    window.location.href = "/login";
-                } else {
-                    const errorData = await response.json();
-                    console.error("خطای ثبت‌نام:", errorData.detail);
-                    showAlert(errorData.detail || "ثبت‌نام ناموفق بود!", "danger");
-                }
-            } catch (error) {
-                console.error("خطای درخواست:", error);
-                showAlert("خطایی رخ داد!", "danger");
-            }
+        const levels = levelOptions[unit]?.[team] || [];
+        levels.forEach(level => {
+            const opt = document.createElement("option");
+            opt.value = level;
+            opt.textContent = level.toUpperCase();
+            levelSelect.appendChild(opt);
         });
     }
 
-    // // دریافت اطلاعات داشبورد
-    // async function loadDashboardData() {
-    //     console.log("در حال بارگذاری اطلاعات داشبورد...");
-    //     try {
-    //         const token = localStorage.getItem("token");
-    //         if (!token) {
-    //             console.error("توکن یافت نشد!");
-    //             showAlert("لطفاً وارد شوید!", "warning");
-    //             window.location.href = "/login";
-    //             return;
-    //         }
+    unitSelect.addEventListener("change", () => {
+        const selectedUnit = unitSelect.value;
+        if (selectedUnit === "noc") {
+            teamContainer.style.display = "none";
+            teamSelect.value = "Zitel";
+        } else {
+            teamContainer.style.display = "block";
+        }
+        updateLevels();
+    });
 
-    //         const response = await fetch("/dashboard-data", {
-    //             method: "GET",
-    //             headers: {
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
+    teamSelect.addEventListener("change", updateLevels);
 
-    //         if (response.ok) {
-    //             const data = await response.json();
-    //             console.log("اطلاعات دریافت شد:", data);
-    //             document.getElementById("total-requests").textContent = data.total_requests || 0;
-    //             document.getElementById("approved-requests").textContent = data.approved_requests || 0;
-    //             document.getElementById("rejected-requests").textContent = data.rejected_requests || 0;
-    //             document.getElementById("pending-requests").textContent = data.pending_requests || 0;
-    //         } else if (response.status === 401) {
-    //             console.error("توکن نامعتبر است یا منقضی شده!");
-    //             showAlert("توکن نامعتبر است یا منقضی شده!", "danger");
-    //             window.location.href = "/login";
-    //         }
-    //     } catch (error) {
-    //         console.error("خطا در دریافت اطلاعات داشبورد:", error);
-    //         showAlert("خطا در دریافت اطلاعات داشبورد!", "danger");
-    //     }
-    // }
-    // if (window.location.pathname === "/leave-requests-page") {
-    //     loadUserLeaveRequests();
-    // }
+    // مقدار اولیه
+    unitSelect.dispatchEvent(new Event("change"));
 
+        // تابع نمایش آلارم
+        function showAlert(message, type = "success") {
+            const alertContainer = document.getElementById("alert-container");
+            if (!alertContainer) return;
+
+            const alert = document.createElement("div");
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.role = "alert";
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.classList.remove("show");
+                alert.classList.add("hide");
+                alert.addEventListener("transitionend", () => alert.remove());
+            }, 5000);
+        }
     // دریافت لیست درخواست‌های مرخصی از سرور
     async function loadUserLeaveRequests() {
         try {
@@ -378,13 +292,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     // اتصال تابع خروج به دکمه‌های خروج
-    const logoutButtons = document.querySelectorAll(".nav-link.text-danger, .desktop-logout");
-    logoutButtons.forEach(button => {
-        button.addEventListener("click", function (e) {
-            e.preventDefault();
-            logoutUser();
-        });
-    });
+    // const logoutButtons = document.querySelectorAll(".nav-link.text-danger, .desktop-logout");
+    // logoutButtons.forEach(button => {
+    //     button.addEventListener("click", function (e) {
+    //         e.preventDefault();
+    //         logoutUser();
+    //     });
+    // });
     // اگر در صفحه داشبورد هستیم
     if (window.location.pathname.startsWith("/dashboard")) {
         loadDashboardData();
@@ -401,76 +315,76 @@ document.addEventListener("DOMContentLoaded", function () {
     // }
     
 
-    const leaveRequestForm = document.getElementById("leave-request-form");
-    if (leaveRequestForm) {
-        leaveRequestForm.addEventListener("submit", async function (e) {
-            e.preventDefault(); // جلوگیری از ارسال پیش‌فرض فرم
+    // const leaveRequestForm = document.getElementById("leave-request-form");
+    // if (leaveRequestForm) {
+    //     leaveRequestForm.addEventListener("submit", async function (e) {
+    //         e.preventDefault(); // جلوگیری از ارسال پیش‌فرض فرم
 
-            // تابع تبدیل اعداد فارسی به انگلیسی
-            function convertToEnglishDigits(input) {
-                const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
-                const englishDigits = "0123456789";
-                return input.replace(/[۰-۹]/g, (char) => englishDigits[persianDigits.indexOf(char)]);
-            }
+    //         // تابع تبدیل اعداد فارسی به انگلیسی
+    //         function convertToEnglishDigits(input) {
+    //             const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+    //             const englishDigits = "0123456789";
+    //             return input.replace(/[۰-۹]/g, (char) => englishDigits[persianDigits.indexOf(char)]);
+    //         }
 
-            // دریافت تاریخ‌های شمسی از فیلدهای ورودی
-            const jalaliStartDate = convertToEnglishDigits(document.getElementById("start-date").value); // تاریخ شمسی
-            const jalaliEndDate = convertToEnglishDigits(document.getElementById("end-date").value);     // تاریخ شمسی
-            const reason = document.getElementById("reason").value;
+    //         // دریافت تاریخ‌های شمسی از فیلدهای ورودی
+    //         const jalaliStartDate = convertToEnglishDigits(document.getElementById("start-date").value); // تاریخ شمسی
+    //         const jalaliEndDate = convertToEnglishDigits(document.getElementById("end-date").value);     // تاریخ شمسی
+    //         const reason = document.getElementById("reason").value;
 
-            // بررسی فرمت تاریخ‌های ورودی
-            console.log("Jalali Start Date:", jalaliStartDate);
-            console.log("Jalali End Date:", jalaliEndDate);
+    //         // بررسی فرمت تاریخ‌های ورودی
+    //         console.log("Jalali Start Date:", jalaliStartDate);
+    //         console.log("Jalali End Date:", jalaliEndDate);
 
-            // تبدیل تاریخ‌های شمسی به میلادی با فرمت خط تیره
-            const startDate = moment(jalaliStartDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
-            const endDate = moment(jalaliEndDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
+    //         // تبدیل تاریخ‌های شمسی به میلادی با فرمت خط تیره
+    //         const startDate = moment(jalaliStartDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
+    //         const endDate = moment(jalaliEndDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
 
-            // بررسی تاریخ‌های تبدیل‌شده
-            console.log("Start Date (Gregorian):", startDate);
-            console.log("End Date (Gregorian):", endDate);
+    //         // بررسی تاریخ‌های تبدیل‌شده
+    //         console.log("Start Date (Gregorian):", startDate);
+    //         console.log("End Date (Gregorian):", endDate);
             
-            // بررسی اینکه تاریخ پایان نباید کوچکتر از تاریخ شروع باشد
-            if (new Date(endDate) < new Date(startDate)) {
-                alert("تاریخ پایان نمی‌تواند کوچکتر از تاریخ شروع باشد.");
-                return;
-            }
+    //         // بررسی اینکه تاریخ پایان نباید کوچکتر از تاریخ شروع باشد
+    //         if (new Date(endDate) < new Date(startDate)) {
+    //             alert("تاریخ پایان نمی‌تواند کوچکتر از تاریخ شروع باشد.");
+    //             return;
+    //         }
 
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                    alert("لطفاً وارد شوید!");
-                    window.location.href = "/login";
-                    return;
-                }
+    //         try {
+    //             const token = localStorage.getItem("token");
+    //             if (!token) {
+    //                 alert("لطفاً وارد شوید!");
+    //                 window.location.href = "/login";
+    //                 return;
+    //             }
 
-                // ارسال درخواست به API
-                const response = await fetch("/leave_request", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        start_date: startDate, // ارسال تاریخ میلادی
-                        end_date: endDate,     // ارسال تاریخ میلادی
-                        reason: reason
-                    })
-                });
+    //             // ارسال درخواست به API
+    //             const response = await fetch("/leave_request", {
+    //                 method: "POST",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                     "Authorization": `Bearer ${token}`
+    //                 },
+    //                 body: JSON.stringify({
+    //                     start_date: startDate, // ارسال تاریخ میلادی
+    //                     end_date: endDate,     // ارسال تاریخ میلادی
+    //                     reason: reason
+    //                 })
+    //             });
 
-                if (response.ok) {
-                    alert("درخواست مرخصی با موفقیت ثبت شد!");
-                    window.location.href = "/leave-requests-page";
-                } else {
-                    const errorData = await response.json();
-                    alert(errorData.detail || "خطا در ثبت درخواست مرخصی!");
-                }
-            } catch (error) {
-                console.error("خطا در ارسال درخواست مرخصی:", error);
-                alert("خطایی رخ داد!");
-            }
-        });
-    }
+    //             if (response.ok) {
+    //                 alert("درخواست مرخصی با موفقیت ثبت شد!");
+    //                 window.location.href = "/leave-requests-page";
+    //             } else {
+    //                 const errorData = await response.json();
+    //                 alert(errorData.detail || "خطا در ثبت درخواست مرخصی!");
+    //             }
+    //         } catch (error) {
+    //             console.error("خطا در ارسال درخواست مرخصی:", error);
+    //             alert("خطایی رخ داد!");
+    //         }
+    //     });
+    // }
 
     // دریافت داده‌ها از API
     fetch("/all-leave-requests")
