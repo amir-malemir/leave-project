@@ -37,9 +37,9 @@ app.include_router(reports.router)
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "message": "سلام، به سامانه مرخصی خوش آمدید!"})
+    return RedirectResponse(url="/login")
 
-@app.post("/logout")
-def logout(response: Response):
-    response.delete_cookie("access_token")
-    return {"message": "خروج موفقیت‌آمیز بود"}
+# @app.post("/logout")
+# def logout(response: Response):
+#     response.delete_cookie("access_token")
+#     return {"message": "خروج موفقیت‌آمیز بود"}
