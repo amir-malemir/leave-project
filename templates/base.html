@@ -21,7 +21,8 @@
 </head>
 <body>
     <!-- کانتینر برای نمایش پیام‌های هشدار -->
-    <div id="alert-container"></div>
+    <div id="alert-container" class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050;"></div>
+
 
     <!-- <div id="alert-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div> -->
     <!-- منوی همبرگری -->
@@ -60,11 +61,17 @@
                             </a>
                         </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link text-danger" href="/logout">
-                            <i class="bi bi-box-arrow-right"></i>خروج
-                        </a>
-                    </li>
+                    <form action="/logout" method="post" class="nav-item logout-form">
+                        <button type="submit"
+                                class="nav-link text-danger w-100 text-end"
+                                style="all: unset; display: flex; align-items: center; color: #e74c3c; cursor: pointer; padding: 10px 15px; border-radius: 5px;">
+                            <i class="bi bi-box-arrow-right" style="margin-left: 10px;"></i>
+                            خروج
+                        </button>
+                    </form>
+
+
+
                 </ul>
             </div>
         </div>
@@ -101,11 +108,17 @@
                     </a>
                 </li>
             {% endif %}
-            <li class="nav-item">
-                <a class="nav-link text-danger desktop-logout" href="#">
-                    <i class="bi bi-box-arrow-right"></i>خروج
-                </a>
-            </li>
+            <form action="/logout" method="post" class="nav-item logout-form">
+                <button type="submit"
+                        class="nav-link text-danger w-100 text-end"
+                        style="all: unset; display: flex; align-items: center; color: #e74c3c; cursor: pointer; padding: 10px 15px; border-radius: 5px;">
+                    <i class="bi bi-box-arrow-right" style="margin-left: 10px;"></i>
+                    خروج
+                </button>
+            </form>
+
+
+
         </ul>
     </div>
 

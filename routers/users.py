@@ -284,7 +284,7 @@ def login_user(
 
 
 @router.post("/logout")
-def logout_user():
+def logout_get():
     response = RedirectResponse(url="/login", status_code=302)
     response.delete_cookie("access_token")
     return response
