@@ -4,20 +4,23 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="text-center">ایجاد درخواست مرخصی</h1>
-    <form id="leave-request-form" class="mt-4">
-        <div class="mb-3">
-            <label for="start-date" class="form-label">تاریخ شروع</label>
-            <input type="text" class="form-control" id="start-date" name="start_date" required>
-        </div>
-        <div class="mb-3">
-            <label for="end-date" class="form-label">تاریخ پایان</label>
-            <input type="text" class="form-control" id="end-date" name="end_date" required>
-        </div>
-        <div class="mb-3">
-            <label for="reason" class="form-label">دلیل مرخصی</label>
-            <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">ارسال درخواست</button>
+    <form method="POST" action="/leave_request" class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="start-date" class="form-label">تاریخ شروع</label>
+        <input type="text" id="start-date" name="start_date" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="end-date" class="form-label">تاریخ پایان</label>
+        <input type="text" id="end-date" name="end_date" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label for="reason" class="form-label">دلیل مرخصی</label>
+        <textarea name="reason" class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">ثبت درخواست</button>
     </form>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.9.2/build/moment-jalaali.js"></script>
+<script src="/static/app.js"></script>
 {% endblock %}

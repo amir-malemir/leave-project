@@ -39,75 +39,70 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-    
     // فعال کردن Persian Datepicker برای فیلد تاریخ شروع
-    const startDateElement = document.getElementById("start-date");
-    if (startDateElement) {
-        $("#start-date").persianDatepicker({
-            format: "YYYY/MM/DD",
-            onSelect: function () {
-                const jalaliDate = $("#start-date").val();
-                const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
-                console.log("تاریخ میلادی:", gregorianDate);
-            }
-        });
-    }
-
-    // فعال کردن Persian Datepicker برای فیلد تاریخ پایان
-    const endDateElement = document.getElementById("end-date");
-    if (endDateElement) {
-        $("#end-date").persianDatepicker({
-            format: "YYYY/MM/DD",
-            onSelect: function () {
-                const jalaliDate = $("#end-date").val();
-                const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
-                console.log("تاریخ میلادی:", gregorianDate);
-            }
-        });
-    }
-
-    // مدیریت فرم لاگین
-
-
-    // const loginForm = document.getElementById("login-form");
-    // if (loginForm) {
-    //     loginForm.addEventListener("submit", async function (e) {
-    //         e.preventDefault();
-
-    //         const username = document.getElementById("username").value;
-    //         const password = document.getElementById("password").value;
-
-    //         try {
-    //             const response = await fetch("/token", {
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/x-www-form-urlencoded"
-    //                 },
-    //                 body: new URLSearchParams({
-    //                     username: username,
-    //                     password: password
-    //                 })
-    //             });
-
-    //             if (response.ok) {
-    //                 const data = await response.json();
-    //                 console.log("توکن دریافت شد:", data.access_token);
-
-    //                 // ذخیره توکن در localStorage
-    //                 localStorage.setItem("token", data.access_token);
-
-    //                 // هدایت به صفحه داشبورد
-    //                 window.location.href = "/dashboard";
-    //             } else {
-    //                 const errorData = await response.json();
-    //                 showAlert("نام کاربری یا رمز عبور اشتباه است!", "danger");
-    //             }
-    //         } catch (error) {
-    //             console.error("خطا در ارسال درخواست ورود:", error);
-    //             alert("خطایی رخ داد!");
+    // const startDateElement = document.getElementById("start-date");
+    // if (startDateElement) {
+    //     $("#start-date").persianDatepicker({
+    //         format: "YYYY/MM/DD",
+    //         onSelect: function () {
+    //             const jalaliDate = $("#start-date").val();
+    //             const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
+    //             console.log("تاریخ میلادی:", gregorianDate);
     //         }
     //     });
-    //     }
+    // }
+
+    // فعال کردن Persian Datepicker برای فیلد تاریخ پایان
+    // const endDateElement = document.getElementById("end-date");
+    // if (endDateElement) {
+    //     $("#end-date").persianDatepicker({
+    //         format: "YYYY/MM/DD",
+    //         onSelect: function () {
+    //             const jalaliDate = $("#end-date").val();
+    //             const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
+    //             console.log("تاریخ میلادی:", gregorianDate);
+    //         }
+    //     });
+    // }
+
+
+    const convertPersianDigitsToEnglish = (str) => {
+        const persian = "۰۱۲۳۴۵۶۷۸۹";
+        const english = "0123456789";
+        return str.replace(/[۰-۹]/g, (d) => english[persian.indexOf(d)]);
+    };
+
+    // بدون j در خروجی UI
+    $("#start-date").persianDatepicker({
+        format: "YYYY/MM/DD"
+    });
+
+    $("#end-date").persianDatepicker({
+        format: "YYYY/MM/DD"
+    });
+
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function (e) {
+        const startInput = document.getElementById("start-date");
+        const endInput = document.getElementById("end-date");
+
+        const startValue = convertPersianDigitsToEnglish(startInput.value);
+        const endValue = convertPersianDigitsToEnglish(endInput.value);
+
+        const startMoment = moment.from(startValue, "fa", "YYYY/MM/DD");
+        const endMoment = moment.from(endValue, "fa", "YYYY/MM/DD");
+
+        if (!startMoment.isValid() || !endMoment.isValid()) {
+            e.preventDefault();
+            alert("تاریخ‌ها معتبر نیستند");
+            return;
+        }
+
+        startInput.value = startMoment.format("YYYY-MM-DD");
+        endInput.value = endMoment.format("YYYY-MM-DD");
+    });
+
+
 
     // مدیریت فرم ثبت‌نام
     const unitSelect = document.getElementById("register-unit");
@@ -268,37 +263,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
     
-    // اتصال تابع خروج به دکمه خروج
-    function logoutUser() {
-        console.log("در حال خروج...");
-        // ارسال درخواست به سرور برای حذف کوکی
-        fetch("/logout", {
-            method: "POST",
-            credentials: "include" // ارسال کوکی‌ها با درخواست
-        })
-            .then(response => {
-                if (response.ok) {
-                    console.log("خروج موفقیت‌آمیز بود!");
-                    window.location.href = "/login"; // هدایت به صفحه ورود
-                } else {
-                    console.error("خطا در خروج:", response.statusText);
-                    alert("خطا در خروج!");
-                }
-            })
-            .catch(error => {
-                console.error("خطا در ارسال درخواست خروج:", error);
-                alert("خطایی رخ داد!");
-            });
-    }
     
-    // اتصال تابع خروج به دکمه‌های خروج
-    // const logoutButtons = document.querySelectorAll(".nav-link.text-danger, .desktop-logout");
-    // logoutButtons.forEach(button => {
-    //     button.addEventListener("click", function (e) {
-    //         e.preventDefault();
-    //         logoutUser();
-    //     });
-    // });
+   
     // اگر در صفحه داشبورد هستیم
     if (window.location.pathname.startsWith("/dashboard")) {
         loadDashboardData();
@@ -309,82 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
         loadLeaveRequests();
     }
 
-    // // اگر در صفحه مدیریت کاربران هستیم
-    // if (window.location.pathname.startsWith("/user-management")) {
-    //     loadUsers();
-    // }
-    
-
-    // const leaveRequestForm = document.getElementById("leave-request-form");
-    // if (leaveRequestForm) {
-    //     leaveRequestForm.addEventListener("submit", async function (e) {
-    //         e.preventDefault(); // جلوگیری از ارسال پیش‌فرض فرم
-
-    //         // تابع تبدیل اعداد فارسی به انگلیسی
-    //         function convertToEnglishDigits(input) {
-    //             const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
-    //             const englishDigits = "0123456789";
-    //             return input.replace(/[۰-۹]/g, (char) => englishDigits[persianDigits.indexOf(char)]);
-    //         }
-
-    //         // دریافت تاریخ‌های شمسی از فیلدهای ورودی
-    //         const jalaliStartDate = convertToEnglishDigits(document.getElementById("start-date").value); // تاریخ شمسی
-    //         const jalaliEndDate = convertToEnglishDigits(document.getElementById("end-date").value);     // تاریخ شمسی
-    //         const reason = document.getElementById("reason").value;
-
-    //         // بررسی فرمت تاریخ‌های ورودی
-    //         console.log("Jalali Start Date:", jalaliStartDate);
-    //         console.log("Jalali End Date:", jalaliEndDate);
-
-    //         // تبدیل تاریخ‌های شمسی به میلادی با فرمت خط تیره
-    //         const startDate = moment(jalaliStartDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
-    //         const endDate = moment(jalaliEndDate, "jYYYY/jMM/jDD").locale("fa").format("YYYY-MM-DD");
-
-    //         // بررسی تاریخ‌های تبدیل‌شده
-    //         console.log("Start Date (Gregorian):", startDate);
-    //         console.log("End Date (Gregorian):", endDate);
-            
-    //         // بررسی اینکه تاریخ پایان نباید کوچکتر از تاریخ شروع باشد
-    //         if (new Date(endDate) < new Date(startDate)) {
-    //             alert("تاریخ پایان نمی‌تواند کوچکتر از تاریخ شروع باشد.");
-    //             return;
-    //         }
-
-    //         try {
-    //             const token = localStorage.getItem("token");
-    //             if (!token) {
-    //                 alert("لطفاً وارد شوید!");
-    //                 window.location.href = "/login";
-    //                 return;
-    //             }
-
-    //             // ارسال درخواست به API
-    //             const response = await fetch("/leave_request", {
-    //                 method: "POST",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                     "Authorization": `Bearer ${token}`
-    //                 },
-    //                 body: JSON.stringify({
-    //                     start_date: startDate, // ارسال تاریخ میلادی
-    //                     end_date: endDate,     // ارسال تاریخ میلادی
-    //                     reason: reason
-    //                 })
-    //             });
-
-    //             if (response.ok) {
-    //                 alert("درخواست مرخصی با موفقیت ثبت شد!");
-    //                 window.location.href = "/leave-requests-page";
-    //             } else {
-    //                 const errorData = await response.json();
-    //                 alert(errorData.detail || "خطا در ثبت درخواست مرخصی!");
-    //             }
-    //         } catch (error) {
-    //             console.error("خطا در ارسال درخواست مرخصی:", error);
-    //             alert("خطایی رخ داد!");
-    //         }
-    //     });
-    // }
+   
 
     // دریافت داده‌ها از API
     fetch("/all-leave-requests")
