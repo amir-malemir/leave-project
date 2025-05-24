@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, Depends
+from fastapi import FastAPI, Response, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from routers import leave, auth, users, reports
 from core.templates import templates
@@ -22,6 +22,12 @@ Base.metadata.create_all(bind=engine)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.exception_handler(HTTPException)
+async def redirect_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 303 and str(exc.detail).startswith("redirect:"):
+        url = exc.detail.replace("redirect:", "", 1)
+        return RedirectResponse(url, status_code=303)
+    raise exc
 
 app.add_middleware(
     CORSMiddleware,
