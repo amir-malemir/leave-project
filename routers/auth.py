@@ -44,61 +44,35 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(hours=1
     return encoded_jwt
 
 
-# def get_current_user(request: Request, db: Session = Depends(get_db)):
-#     print("========= شروع get_current_user =========")
-#     token = request.cookies.get("access_token")  # دریافت توکن از کوکی
-#     if not token:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="توکن یافت نشد.",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-#     try:
-#         payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=["HS256"])
-#         print("Payload توکن:", payload)  # لاگ داده‌های موجود در payload
-#         user_id = payload.get("sub")
-#         if user_id is None:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="توکن نامعتبر است.",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-#         user = db.query(User).filter(User.id == int(user_id)).first()
-#         if user is None:
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="کاربر یافت نشد.",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-#         return user
-#     except JWTError as e:
-#         print(f"خطا در بررسی توکن: {e}")
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="توکن نامعتبر است.",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="توکن یافت نشد.",
+            status_code=303,
+            detail="redirect:/login?expired=1"
         )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="توکن نامعتبر است.")
+            raise HTTPException(
+                status_code=303,
+                detail="redirect:/login?expired=1"
+            )
         user = db.query(User).filter(User.id == int(user_id)).first()
         if user is None:
-            raise HTTPException(status_code=401, detail="کاربر یافت نشد.")
+            raise HTTPException(
+                status_code=303,
+                detail="redirect:/login?expired=1"
+            )
         return user
     except Exception as e:
         print("خطا در بررسی توکن:", e)
-        raise HTTPException(status_code=401, detail="توکن نامعتبر است.")
+        raise HTTPException(
+            status_code=303,
+            detail="redirect:/login?expired=1"
+        )
 
 @router.post("/token", tags=["auth"])
 def login_for_access_token(
