@@ -14,7 +14,6 @@ from models import User
 router = APIRouter()
 
 
-# تنظیمات امنیتی
 SECRET_KEY = "f2b8e5f6d8c3a1b2e4f7c8d3a9e6b1f0"
 ALGORITHM = "HS256"
 
@@ -25,15 +24,14 @@ class TokenData(BaseModel):
     sub: int
 
 
-#  کانتکست رمزنگاری
+# رمزنگاری
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_password_hash(password: str) -> str:
-    """هش کردن رمز عبور"""
+
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """بررسی صحت رمز عبور"""
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(hours=1)):
@@ -80,9 +78,6 @@ def login_for_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    """
-    دریافت توکن دسترسی و ذخیره آن در کوکی.
-    """
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -92,13 +87,13 @@ def login_for_access_token(
         )
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    # ذخیره توکن در کوکی
+   
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
-        httponly=True,  # جلوگیری از دسترسی جاوااسکریپت
-        secure=True,    # فقط در HTTPS ارسال شود
-        samesite="Strict"  # جلوگیری از ارسال کوکی در درخواست‌های Cross-Site
+        httponly=True,
+        secure=True,
+        samesite="Strict"
     )
 
     return {"message": "ورود موفقیت‌آمیز بود"}

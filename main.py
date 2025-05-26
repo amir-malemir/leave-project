@@ -1,13 +1,12 @@
 from fastapi import FastAPI, Response, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from routers import leave, auth, users, reports
-from core.templates import templates
+from temp.templates import templates
 from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.requests import Request
 from dependencies import engine, Base, get_db
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
-from routers.context_processors import inject_user_role
 import inspect
 
 
@@ -31,7 +30,7 @@ async def redirect_exception_handler(request: Request, exc: HTTPException):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # یا لیست دامنه‌های مجاز
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,8 +43,3 @@ app.include_router(reports.router)
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
     return RedirectResponse(url="/login")
-
-# @app.post("/logout")
-# def logout(response: Response):
-#     response.delete_cookie("access_token")
-#     return {"message": "خروج موفقیت‌آمیز بود"}
