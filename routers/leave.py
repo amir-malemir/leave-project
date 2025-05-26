@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from typing import Optional, List
 from fastapi.responses import HTMLResponse, RedirectResponse
-from core.templates import templates
+from temp.templates import templates
 from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from datetime import date, datetime
@@ -18,7 +18,7 @@ router = APIRouter()
 
 AUTHORIZED_ROLES = ["admin", "manager", "supervisor", "team_lead"]
 
-# مدل پایتون جهت ثبت درخواست مرخصی
+# ثبت درخواست مرخصی
 class LeaveRequestCreate(BaseModel):
     start_date: str
     end_date: str
@@ -29,7 +29,6 @@ class LeaveUpdate(BaseModel):
     reason: Optional[str] = None
 
 def gregorian_to_shamsi(gregorian_date, fmt="%Y/%m/%d"):
-    """تبدیل تاریخ میلادی به شمسی با فرمت دلخواه"""
     if not gregorian_date:
         return "-"
     try:
@@ -54,9 +53,7 @@ def create_leave_request(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        # تبدیل تاریخ‌های شمسی به میلادی
         try:
-            # تبدیل رشته شمسی به تاریخ میلادی
             start_date_j = jdatetime.datetime.strptime(start_date, "%Y/%m/%d").date()
             end_date_j = jdatetime.datetime.strptime(end_date, "%Y/%m/%d").date()
             start_date_gregorian = start_date_j.togregorian()
@@ -72,7 +69,7 @@ def create_leave_request(
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="فرمت تاریخ نامعتبر است. لطفاً تاریخ‌ها را به فرمت YYYY/MM/DD ارسال کنید."
+                detail="فرمت تاریخ نامعتبر است.فرمت YYYY/MM/DD ارسال کنید."
             )
 
         # بررسی تکراری بودن درخواست
@@ -151,35 +148,6 @@ def show_user_leave_requests_page(
         "leave_requests": leave_requests_shamsi,
         "user_role": current_user.role
     })
-# @router.get("/user-leave-requests", tags=["leave"])
-# def get_user_leave_requests(
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     try:
-#         leave_requests = db.query(LeaveRequest).filter(
-#             LeaveRequest.user_id == current_user.id
-#         ).all()
-
-#         # تبدیل تاریخ‌ها به شمسی
-#         leave_requests_shamsi = []
-#         for request in leave_requests:
-#             leave_requests_shamsi.append({
-#                 "id": request.id,
-#                 "username": current_user.username,
-#                 "start_date": jdatetime.date.fromgregorian(date=request.start_date).strftime("%Y/%m/%d"),
-#                 "end_date": jdatetime.date.fromgregorian(date=request.end_date).strftime("%Y/%m/%d"),
-#                 "reason": request.reason,
-#                 "status": request.status
-#             })
-
-#         return leave_requests_shamsi
-#     except Exception as e:
-#         print(f"Error: {str(e)}")
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail="خطا در دریافت لیست درخواست‌های مرخصی"
-#         )
 
 @router.get("/all-leave-requests-page", response_class=HTMLResponse)
 def all_leave_requests_page(
@@ -200,7 +168,7 @@ def all_leave_requests_page(
             .all()
         )
     else:
-        # سایر نقش‌ها (از جمله تیم لید غیر توراندو) همه درخواست‌ها رو ببینن
+        # غیر تورانو
         leave_requests = (
             db.query(LeaveRequest)
             .options(joinedload(LeaveRequest.user))
@@ -210,7 +178,7 @@ def all_leave_requests_page(
     
     leave_requests_data = []
     for req in leave_requests:
-        duration_days = (req.end_date - req.start_date).days + 1  # +1 برای شامل بودن هر دو روز
+        duration_days = (req.end_date - req.start_date).days + 1
         leave_requests_data.append({
             "id": req.id,
             "full_name": req.user.full_name,
@@ -264,66 +232,6 @@ def edit_leave_page(
         }
     )
 
-# @router.post("/update-leave-request/{request_id}")
-# async def update_leave_request(
-#     request_id: int,
-#     request: Request,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.role.lower() not in AUTHORIZED_ROLES:
-#         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-
-#     form_data = await request.form()
-#     leave = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
-
-#     if not leave:
-#         raise HTTPException(status_code=404, detail="درخواست پیدا نشد")
-
-#     target_user = db.query(User).filter(User.id == leave.user_id).first()
-#     requesting_team = target_user.team
-#     current_team = current_user.team
-
-#     # حالت اول: درخواست‌دهنده از تیم Tornado
-#     if requesting_team == "Tornado":
-#         if current_team == "Tornado":
-#             leave.tornado_approval = True
-#             leave.status = "pending_zitel"
-#         elif current_team == "Zitel":
-#             leave.zitel_approval = True
-
-#         # اگر هر دو تأیید کردند
-#         if leave.tornado_approval and leave.zitel_approval:
-#             leave.status = "approved"
-#             leave.approved_by = current_user.id
-#             leave.approved_at = datetime.utcnow()
-
-#     # حالت دوم: درخواست‌دهنده از تیم Zitel
-#     elif requesting_team == "Zitel":
-#         leave.tornado_approval = False  # مشخصه که نیازی به تایید تورنادو نداره
-#         if current_team == "Zitel":
-#             leave.zitel_approval = True
-#             leave.status = "approved"
-#             leave.approved_by = current_user.id
-#             leave.approved_at = datetime.utcnow()
-
-#     else:
-#         # در صورت تیم ناشناس
-#         raise HTTPException(status_code=400, detail="تیم نامعتبر")
-
-#     # به‌روزرسانی مقادیر دیگر
-#     leave.reason = form_data.get("reason")
-#     leave.manager_comment = form_data.get("manager_comment")
-#     leave.updated_at = datetime.utcnow()
-
-#     db.commit()
-
-#     return RedirectResponse(
-#         url="/all-leave-requests-page",
-#         status_code=303
-#     )
-
-
 
 @router.post("/update-leave-request/{request_id}")
 async def update_leave_request(
@@ -345,10 +253,9 @@ async def update_leave_request(
     requesting_team = target_user.team
     current_team = current_user.team
 
-    # بررسی وضعیت جدید (از فرم گرفته شده)
     new_status = form_data.get("status")
 
-    # به‌روزرسانی تأییدها طبق تیم و نقش
+    # طبق تیم و نقش
     if requesting_team == "Tornado":
         if current_team == "Tornado":
             leave.tornado_approval = True
@@ -372,18 +279,14 @@ async def update_leave_request(
     else:
         raise HTTPException(status_code=400, detail="تیم نامعتبر")
 
-    # اعمال تغییر وضعیت دستی فقط در صورتی که کاربر مجاز است
     if new_status in ["pending", "pending_zitel", "approved", "rejected"]:
-        # فقط در صورتی اجازه بدیم که نقش بالایی داشته باشه
         if current_user.role.lower() in ["supervisor", "manager", "superadmin"]:
             leave.status = new_status
             if new_status == "approved":
                 leave.approved_by = current_user.id
                 leave.approved_at = datetime.utcnow()
 
-    # به‌روزرسانی فیلدهای دیگر
     leave.reason = form_data.get("reason")
-    leave.manager_comment = form_data.get("manager_comment")
     leave.updated_at = datetime.utcnow()
 
     db.commit()

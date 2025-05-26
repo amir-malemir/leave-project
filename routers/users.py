@@ -8,7 +8,7 @@ from typing import Optional, List
 from .auth import get_current_user
 from starlette.status import HTTP_302_FOUND
 from fastapi.responses import RedirectResponse, HTMLResponse
-from core.templates import templates
+from temp.templates import templates
 from starlette.requests import Request
 from schemas import UserOut, RoleUpdate
 from datetime import date
@@ -19,7 +19,7 @@ router = APIRouter()
 
 AUTHORIZED_ROLES = ["admin", "manager", "supervisor", "team_lead"]
 
-# مدل پایتون برای دریافت اطلاعات کاربر جهت ثبت در دیتابیس
+# کاربر جدید
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
@@ -31,7 +31,7 @@ class UserCreate(BaseModel):
     password: str
     team: Optional[str] = None
     
-# مدل پایتون برای دریافت اطلاعات لاگین
+# لاگین
 class UserLogin(BaseModel):
     username: str
     password: str
@@ -45,92 +45,62 @@ class Role(str, Enum):
     ADMIN = "admin"
 
 
-def can_change_password(editor: User, target_user: User) -> bool:
-    # ادمین می‌تواند رمز همه را تغییر دهد
+def can_change_password(editor: User, target: User) -> bool:
     if editor.role == "admin":
         return True
-    
-    # مدیر می‌تواند رمز همه به جز ادمین را تغییر دهد
+
     if editor.role == "manager":
-        return target_user.role != "admin"
-    
-    # سوپروایزر می‌تواند رمز همه به جز مدیر و ادمین را تغییر دهد
+        return target.role != "admin"
+
     if editor.role == "supervisor":
-        return target_user.role not in ["manager", "admin"]
-    
-    # تیم لید Zitel
+        return target.role not in ["admin", "manager"]
+
     if editor.role == "zitel_team_lead":
-        return target_user.role in ["inbound_zitel", "outbound", "ahd", "tornado_team_lead"]
-    
-    # تیم لید Tornado
+        return target.role in ["inbound_zitel", "outbound", "ahd", "tornado_team_lead"]
+
     if editor.role == "tornado_team_lead":
-        return target_user.role == "inbound_tornado"
-    
+        return target.role == "inbound_tornado"
+
     return False
 
-def can_edit_user(editor: User, target_user: User, new_role: str = None) -> bool:
-    # ادمین می‌تواند همه را ویرایش کند
+def can_edit_user(editor: User, target: User, new_role: Optional[str] = None) -> bool:
     if editor.role == "admin":
         return True
-    
-    # مدیر می‌تواند همه به جز ادمین را ویرایش کند
+
     if editor.role == "manager":
-        return target_user.role != "admin"
-    
-    # سوپروایزر می‌تواند کاربران زیردست خود را ویرایش کند
+        return target.role != "admin"
+
     if editor.role == "supervisor":
-        allowed_roles = [
-            "team_lead",
-            "inbound_zitel",
-            "inbound_tornado",
-            "outbound",
-            "ahd",
-            "noc_team_lead",
-            "noc_ecs",
-            "noc_fo",
-            "noc_ops"
+        allowed = [
+            "team_lead", "inbound_zitel", "inbound_tornado",
+            "outbound", "ahd", "noc_team_lead", "noc_ecs", "noc_fo", "noc_ops"
         ]
-        return target_user.role in allowed_roles and (new_role in allowed_roles if new_role else True)
-    
-    # تیم لید callcenter
+        return target.role in allowed and (new_role in allowed if new_role else True)
+
     if editor.role == "team_lead":
-        return target_user.role in ["inbound_zitel", "inbound_tornado", "outbound", "ahd"]
-    
-    # تیم لید noc
+        return target.role in ["inbound_zitel", "inbound_tornado", "outbound", "ahd"]
+
     if editor.role == "noc_team_lead":
-        return target_user.role in ["noc_ecs", "noc_fo", "noc_ops"]
-    
+        return target.role in ["noc_ecs", "noc_fo", "noc_ops"]
+
     return False
 
-def validate_unit_level_team(
-    unit: str,
-    level: str,
-    team: Optional[str] = None
-) -> bool:
-    valid_team_levels = {
-        "callcenter": {
-            "zitel": ["inbound", "outbound", "ahd"],
-            "tornado": ["inbound"]
-        },
-        "noc": {
-            "zitel": ["ecs", "fo", "ops"]
-        }
-    }
-
+def validate_unit_level_team(unit: str, level: str, team: Optional[str] = None) -> bool:
     unit = unit.lower()
     level = level.lower()
     team = (team or "").lower()
 
-    if unit not in valid_team_levels:
-        return False
+    if unit == "callcenter":
+        if team == "zitel" and level in ["inbound", "outbound", "ahd"]:
+            return True
+        if team == "tornado" and level == "inbound":
+            return True
 
-    if team not in valid_team_levels[unit]:
-        return False
+    elif unit == "noc":
+        if team == "zitel" and level in ["ecs", "fo", "ops"]:
+            return True
 
-    if level not in valid_team_levels[unit][team]:
-        return False
-
-    return True
+    return False
 
 
 @router.get("/register", response_class=HTMLResponse)
@@ -213,7 +183,7 @@ def dashboard_page(
     if current_user.role in ["admin", "manager", "supervisor", "team_lead"]:
         leave_today = (
             db.query(LeaveRequest)
-            .join(User, LeaveRequest.user_id == User.id)  # ✅ این خط
+            .join(User, LeaveRequest.user_id == User.id)
             .filter(
                 LeaveRequest.start_date <= today,
                 LeaveRequest.end_date >= today,
@@ -232,27 +202,11 @@ def dashboard_page(
         "pending_requests": pending_requests,
         "leave_today": leave_today
     })
-# مسیر API برای لاگین
-# @router.post("/login", tags=["users"])
-# def login(user_data: UserLogin, db: Session = Depends(get_db)):
-#     # بررسی وجود کاربر
-#     db_user = db.query(User).filter(User.username == user_data.username).first()
-#     if not db_user or not verify_password(user_data.password, db_user.hashed_password):
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="نام کاربری یا رمز عبور اشتباه است"
-#         )
-    
-#     # ایجاد توکن دسترسی
-#     access_token = create_access_token(data={"sub": db_user.username})
-#     return {"access_token": access_token, "token_type": "bearer"}
 
 # مسیر صفحه لاگین
 @router.get("/login", response_class=HTMLResponse, tags=["users"])
 def login_page(request: Request):
-    print("Login page rendered") 
     return templates.TemplateResponse("login.html", {"request": request})
-
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -269,13 +223,13 @@ def login_user(
             "error": "نام کاربری یا رمز عبور اشتباه است!"
         })
 
-    access_token = create_access_token(data={"sub": str(user.id)})  # ✅ باید ID باشد
+    access_token = create_access_token(data={"sub": str(user.id)})
     response = RedirectResponse(url="/dashboard", status_code=302)
 
-    # در محیط لوکال secure=False بگذار
+    
     response.set_cookie(
         key="access_token",
-        value=access_token,  # فقط خود توکن، بدون "Bearer "
+        value=access_token,
         httponly=True,
         samesite="Strict",
         secure=False
@@ -365,11 +319,11 @@ def update_user(
     if not target_user:
         raise HTTPException(status_code=404, detail="کاربر یافت نشد")
     
-    # بررسی مجوز ویرایش
+    #  ویرایش
     if not can_edit_user(current_user, target_user):
         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
     
-    # بررسی مجوز تغییر رمز (اگر رمز جدید ارائه شده)
+    # رمز جدید
     if new_password and not can_change_password(current_user, target_user):
         raise HTTPException(status_code=403, detail="شما مجوز تغییر رمز این کاربر را ندارید")
     
@@ -383,13 +337,12 @@ def update_user(
             status_code=400,
             detail="ترکیب واحد/سطح/تیم نامعتبر است"
         )
-    # اعمال تغییرات
+
     target_user.full_name = full_name
     target_user.email = email
     target_user.unit = unit
     target_user.role = role
     
-    # اگر رمز جدید ارائه شده، آن را اعمال کن
     if new_password:
         target_user.hashed_password = get_password_hash(new_password)
     

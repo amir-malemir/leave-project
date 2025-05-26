@@ -35,7 +35,7 @@
 # #     current_user.full_name = full_name
 # #     current_user.email = email
 # #     if new_password:
-# #         current_user.set_password(new_password)  # تابعی که رمز رو هش می‌کنه
+# #         current_user.set_password(new_password)  
 # #     db.commit()
 # #     return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)
 
@@ -74,27 +74,7 @@
 # #     current_user.full_name = full_name
 # #     current_user.email = email
 # #     if new_password:
-# #         current_user.set_password(new_password)  # فرض بر اینه تابع داره
+# #         current_user.set_password(new_password) 
 # #     db.commit()
 # #     return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)
 
-
-# # @router.post("/admin-settings")
-# # def update_admin_settings(
-# #     max_leave_days: int = Form(...),
-# #     default_shift: str = Form(None),
-# #     db: Session = Depends(get_db),
-# #     current_user: User = Depends(get_current_user)
-# # ):
-# #     if current_user.role not in ["admin", "manager", "supervisor", "team_lead"]:
-# #         raise HTTPException(status_code=403, detail="دسترسی غیرمجاز")
-
-# #     settings = db.query(AdminSetting).first()
-# #     if settings:
-# #         settings.max_leave_days = max_leave_days
-# #         settings.default_shift = default_shift
-# #     else:
-# #         settings = AdminSetting(max_leave_days=max_leave_days, default_shift=default_shift)
-# #         db.add(settings)
-# #     db.commit()
-# #     return RedirectResponse(url="/settings", status_code=HTTP_302_FOUND)

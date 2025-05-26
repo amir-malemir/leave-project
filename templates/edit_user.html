@@ -32,6 +32,25 @@
             </select>
         </div>
         <div class="mb-3">
+            <label class="form-label">تیم</label>
+                <select class="form-select" name="team">
+                    <option value="" {% if not user_to_edit.team %}selected{% endif %}>—</option>
+                    <option value="tornado" {% if user_to_edit.team == "tornado" %}selected{% endif %}>Tornado</option>
+                    <option value="zitel" {% if user_to_edit.team == "zitel" %}selected{% endif %}>Zitel</option>
+                </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">سطح</label>
+                <select class="form-select" name="level">
+                    <option value="inbound" {% if user_to_edit.level == "inbound" %}selected{% endif %}>ورودی</option>
+                    <option value="outbound" {% if user_to_edit.level == "outbound" %}selected{% endif %}>خروجی</option>
+                    <option value="ahd" {% if user_to_edit.level == "ahd" %}selected{% endif %}>AHD</option>
+                    <option value="teamlead-tornado" {% if user_to_edit.level == "teamlead-tornado" %}selected{% endif %}>سرگروه تورنادو</option>
+                    <option value="superadmin" {% if user_to_edit.level == "superadmin" %}selected{% endif %}>مدیرکل</option>
+                </select>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label" for="new_password">رمز عبور جدید (اختیاری)</label>
             <input type="password" id="new_password" name="new_password" class="form-control">
             <small class="text-muted">فقط در صورت نیاز به تغییر رمز پر کنید</small>

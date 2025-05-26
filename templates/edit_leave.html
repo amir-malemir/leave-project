@@ -16,18 +16,19 @@
         </div>
 
         <div class="mb-3">
-            <label for="manager_comment" class="form-label">نظر مدیر</label>
-            <textarea class="form-control" id="manager_comment" name="manager_comment" rows="3">{{ leave.manager_comment or '' }}</textarea>
-        </div>
-
-        <div class="mb-3">
             <label for="status" class="form-label">وضعیت درخواست</label>
             <select class="form-select" name="status" id="status" required>
-                {% for option in ["pending", "pending_zitel", "approved", "rejected"] %}
-                    <option value="{{ option }}" {% if leave.status == option %}selected{% endif %}>{{ option }}</option>
+                {% set status_labels = {
+                    "pending": "در انتظار تایید",
+                    "approved": "تایید شده",
+                    "rejected": "رد شده"
+                } %}
+                {% for value, label in status_labels.items() %}
+                    <option value="{{ value }}" {% if leave.status == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
         </div>
+
 
         <button type="submit" class="btn btn-success">ذخیره تغییرات</button>
         <a href="/all-leave-requests-page" class="btn btn-secondary">بازگشت</a>

@@ -39,32 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
-    // فعال کردن Persian Datepicker برای فیلد تاریخ شروع
-    // const startDateElement = document.getElementById("start-date");
-    // if (startDateElement) {
-    //     $("#start-date").persianDatepicker({
-    //         format: "YYYY/MM/DD",
-    //         onSelect: function () {
-    //             const jalaliDate = $("#start-date").val();
-    //             const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
-    //             console.log("تاریخ میلادی:", gregorianDate);
-    //         }
-    //     });
-    // }
-
-    // فعال کردن Persian Datepicker برای فیلد تاریخ پایان
-    // const endDateElement = document.getElementById("end-date");
-    // if (endDateElement) {
-    //     $("#end-date").persianDatepicker({
-    //         format: "YYYY/MM/DD",
-    //         onSelect: function () {
-    //             const jalaliDate = $("#end-date").val();
-    //             const gregorianDate = moment(jalaliDate, "jYYYY/jMM/jDD").startOf("day").format("YYYY-MM-DD");
-    //             console.log("تاریخ میلادی:", gregorianDate);
-    //         }
-    //     });
-    // }
-
 
     const convertPersianDigitsToEnglish = (str) => {
         const persian = "۰۱۲۳۴۵۶۷۸۹";
@@ -72,45 +46,15 @@ document.addEventListener("DOMContentLoaded", function () {
         return str.replace(/[۰-۹]/g, (d) => english[persian.indexOf(d)]);
     };
 
-    // بدون j در خروجی UI
-    $("#start-date").persianDatepicker({
-        format: "YYYY/MM/DD"
-    });
+    // دسترسی به فیلدهای فرم ثبت‌نام
+    if (document.getElementById("register-unit") &&
+    document.getElementById("register-team") &&
+    document.getElementById("register-level")) {
 
-    $("#end-date").persianDatepicker({
-        format: "YYYY/MM/DD"
-    });
-
-    const form = document.querySelector("form");
-    form.addEventListener("submit", function (e) {
-        const startInput = document.getElementById("start-date");
-        const endInput = document.getElementById("end-date");
-
-        const startValue = convertPersianDigitsToEnglish(startInput.value);
-        const endValue = convertPersianDigitsToEnglish(endInput.value);
-
-        const startMoment = moment.from(startValue, "fa", "YYYY/MM/DD");
-        const endMoment = moment.from(endValue, "fa", "YYYY/MM/DD");
-
-        if (!startMoment.isValid() || !endMoment.isValid()) {
-            e.preventDefault();
-            alert("تاریخ‌ها معتبر نیستند");
-            return;
-        }
-
-        startInput.value = startMoment.format("YYYY-MM-DD");
-        endInput.value = endMoment.format("YYYY-MM-DD");
-    });
-
-
-
-    // مدیریت فرم ثبت‌نام
     const unitSelect = document.getElementById("register-unit");
     const teamSelect = document.getElementById("register-team");
-    const teamContainer = teamSelect?.parentElement;
+    const teamContainer = teamSelect.parentElement;
     const levelSelect = document.getElementById("register-level");
-
-    if (!unitSelect || !teamSelect || !levelSelect) return;
 
     const levelOptions = {
         callcenter: {
@@ -149,134 +93,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
     teamSelect.addEventListener("change", updateLevels);
 
-    // مقدار اولیه
     unitSelect.dispatchEvent(new Event("change"));
+}
 
-        // تابع نمایش آلارم
-        function showAlert(message, type = "success") {
-            const alertContainer = document.getElementById("alert-container");
-            if (!alertContainer) return;
+    // تابع نمایش آلارم
+    function showAlert(message, type = "success") {
+        const alertContainer = document.getElementById("alert-container");
+        if (!alertContainer) return;
 
-            const alert = document.createElement("div");
-            alert.className = `alert alert-${type} alert-dismissible fade show`;
-            alert.role = "alert";
-            alert.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
+        const alert = document.createElement("div");
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.role = "alert";
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
 
-            alertContainer.appendChild(alert);
+        alertContainer.appendChild(alert);
 
-            setTimeout(() => {
-                alert.classList.remove("show");
-                alert.classList.add("hide");
-                alert.addEventListener("transitionend", () => alert.remove());
-            }, 5000);
-        }
-    // دریافت لیست درخواست‌های مرخصی از سرور
-    async function loadUserLeaveRequests() {
-        try {
-            const response = await fetch("http://127.0.0.1:8000/user-leave-requests", {
-                method: "GET",
-                credentials: "include" // ارسال کوکی‌ها با درخواست
-            });
-
-            if (response.ok) {
-                const requests = await response.json();
-                console.log("لیست درخواست‌های مرخصی دریافت شد:", requests);
-                renderLeaveRequests(requests); // نمایش داده‌ها در جدول
-            } else if (response.status === 401) {
-                alert("توکن منقضی شده یا نامعتبر است!");
-                window.location.href = "/login";
-            } else {
-                console.error("خطا در دریافت اطلاعات:", response.statusText);
-            }
-        } catch (error) {
-            console.error("خطا در فراخوانی API:", error);
-        }
+        setTimeout(() => {
+            alert.classList.remove("show");
+            alert.classList.add("hide");
+            alert.addEventListener("transitionend", () => alert.remove());
+        }, 5000);
     }
-
-    // نمایش لیست درخواست‌ها در جدول
-    function renderLeaveRequests(requests) {
-        const requestsTable = document.getElementById("requests-table");
-        requestsTable.innerHTML = ""; // پاک کردن محتوای قبلی جدول
-
-        requests.forEach(request => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${request.id}</td>
-                <td>${request.username || "?"}</td>
-                <td>${request.start_date}</td>
-                <td>${request.end_date}</td>
-                <td>
-                    <span class="badge ${
-                        request.status === "approved" ? "bg-success" :
-                        request.status === "rejected" ? "bg-danger" :
-                        "bg-warning text-dark"
-                    }">
-                        ${request.status}
-                    </span>
-                </td>
-                <td>${request.reason}</td>
-            `;
-            requestsTable.appendChild(row);
-        });
-    }
-
-    // فراخوانی تابع هنگام بارگذاری صفحه
-    document.addEventListener("DOMContentLoaded", loadUserLeaveRequests);
-
-    // نمایش لیست کاربران
-    function renderUsers(users) {
-        const usersTable = document.getElementById("users-table");
-        usersTable.innerHTML = "";
-
-        users.forEach(user => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
-                <td>${user.unit}</td>
-                <td>${user.role}</td>
-                <td>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            عملیات
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="#" onclick="editUser(${user.id})">
-                                    <i class="bi bi-pencil"></i> ویرایش
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="#" onclick="deleteUser(${user.id})">
-                                    <i class="bi bi-trash"></i> حذف
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </td>
-            `;
-            usersTable.appendChild(row);
-        });
-    }
-    
-    
-   
-    // اگر در صفحه داشبورد هستیم
-    if (window.location.pathname.startsWith("/dashboard")) {
-        loadDashboardData();
-    }
-
-    // اگر در صفحه مشاهده درخواست‌ها هستیم
-    if (window.location.pathname.startsWith("/user-leave-requests")) {
-        loadLeaveRequests();
-    }
-
-   
-
     // دریافت داده‌ها از API
     fetch("/all-leave-requests")
         .then(response => response.json())

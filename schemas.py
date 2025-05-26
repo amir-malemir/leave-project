@@ -11,7 +11,7 @@ class TeamBase(BaseModel):
 
     class Config:
         orm_mode = True
-# اسکیمای خروجی برای اطلاعات کاربر
+
 class UserOut(BaseModel):
     id: int
     username: str
@@ -23,10 +23,7 @@ class UserOut(BaseModel):
     role: str
     team: Optional[TeamBase] = None
 
-    class Config:
-        from_attributes = True
 
-# اسکیمای تغییر نقش کاربر
 class RoleUpdate(BaseModel):
     role: str
 

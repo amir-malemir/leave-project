@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse, HTMLResponse
 from models import LeaveRequest, User
 from typing import Optional
 from .auth import get_current_user
-from core.templates import templates
+from temp.templates import templates
 
 router = APIRouter()
 
@@ -64,7 +64,7 @@ def export_leave_requests_excel(
     ]
     ws.append(headers)
 
-    # ساخت کوئری با فیلترهای داینامیک
+    # داینامیک
     query = db.query(LeaveRequest).join(User)
 
     if start_date:
